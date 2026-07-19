@@ -364,7 +364,7 @@ static void test_stats_before_start() {
     ASSERT(stats.correctKeystrokes == 0, "correctKeystrokes should be 0");
     ASSERT(stats.wpm == 0.0, "wpm should be 0.0");
     ASSERT(stats.wpmRaw == 0.0, "wpmRaw should be 0.0");
-    ASSERT(stats.durationMs == 0, "durationMs should be 0");
+    ASSERT(stats.durationMs.count() == 0, "durationMs should be 0");
     PASS();
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -36,7 +37,7 @@ namespace detail {
 
 /** @brief Snapshot of typing session statistics. */
 struct SessionStats {
-    int64_t durationMs;          /**< Total session duration in milliseconds. */
+        std::chrono::milliseconds durationMs{0}; /**< Total session duration in milliseconds. */
     uint32_t correctKeystrokes;  /**< Number of correct keystrokes. */
     uint32_t incorrectKeystrokes;/**< Number of incorrect keystrokes. */
     uint32_t totalKeystrokes;    /**< Total keystrokes (correct + incorrect). */

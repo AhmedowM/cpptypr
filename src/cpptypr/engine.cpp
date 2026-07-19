@@ -119,7 +119,7 @@ bool Engine::wasStopped() const { CHECK_MOVED(); return ::engineWasStopped(m_imp
 SessionStats Engine::stats() const {
     CHECK_MOVED();
     auto s = ::engineGetStats(m_impl);
-    return { s.durationMs, s.correctKeystrokes, s.incorrectKeystrokes, s.totalKeystrokes, s.accuracy, s.wpm, s.wpmRaw };
+    return { std::chrono::milliseconds(s.durationMs), s.correctKeystrokes, s.incorrectKeystrokes, s.totalKeystrokes, s.accuracy, s.wpm, s.wpmRaw };
 }
 
 void Engine::setMode(EngineMode mode) { CHECK_MOVED(); ::engineSetMode(m_impl, static_cast<::EngineMode>(mode)); }

@@ -1,5 +1,6 @@
 #include <cpptypr.hpp>
 
+#include <chrono>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -46,7 +47,7 @@ static cpptypr::SessionData makeSession(const char* mode = "strict") {
     s.mode = mode;
     s.totalChars = 100;
     s.correctChars = 95;
-    s.durationMs = 60000;
+    s.durationMs = std::chrono::milliseconds(60000);
     s.wpm = 78.5;
     s.wpmRaw = 83.2;
     s.accuracy = 95.0;
@@ -70,7 +71,7 @@ static void test_save_and_get_session() {
         ASSERT(retrieved->mode == "strict", "mode should match");
         ASSERT(retrieved->totalChars == 100, "totalChars should match");
         ASSERT(retrieved->correctChars == 95, "correctChars should match");
-        ASSERT(retrieved->durationMs == 60000, "durationMs should match");
+        ASSERT(retrieved->durationMs.count() == 60000, "durationMs should match");
         ASSERT(fabs(retrieved->wpm - 78.5) < 0.001, "wpm should match");
         ASSERT(fabs(retrieved->wpmRaw - 83.2) < 0.001, "wpmRaw should match");
         ASSERT(fabs(retrieved->accuracy - 95.0) < 0.001, "accuracy should match");
@@ -257,6 +258,31 @@ static void test_repository_move() {
     PASS();
 }
 
+// ===== Range iteration =====
+
+static void test_range_iteration() {
+    TEST("Repository: range-based for loop");
+    cleanupTestDb();
+    {
+        cpptypr::Repository repo(TEST_DB_PATH);
+        int count = 0;
+        for (auto& s : repo) { (void)s; count++; }
+        ASSERT(count == 0, "empty repo should iterate 0 times");
+
+        repo.saveSession(makeSession("strict"));
+        repo.saveSession(makeSession("flow"));
+
+        count = 0;
+        for (auto& s : repo) {
+            count++;
+            ASSERT(s.totalChars == 100, "session data should be valid");
+        }
+        ASSERT(count == 2, "should iterate 2 sessions");
+    }
+    cleanupTestDb();
+    PASS();
+}
+
 int main() {
     printf("=== cpptypr Repository Test Suite ===\n\n");
 
@@ -271,6 +297,7 @@ int main() {
     test_get_best_raw_wpm();
     test_get_average_wpm();
     test_repository_move();
+    test_range_iteration();
 
     printf("\n=== Results: %d passed, %d failed, %d total ===\n",
            tests_passed, tests_failed, test_count);

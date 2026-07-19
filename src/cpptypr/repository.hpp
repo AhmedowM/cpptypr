@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 #include <optional>
 #include <string>
@@ -22,7 +23,7 @@ struct SessionData {
     std::string mode;      /**< Engine mode used during the session. */
     int64_t totalChars;    /**< Total characters typed. */
     int64_t correctChars;  /**< Correctly typed characters. */
-    int64_t durationMs;    /**< Session duration in milliseconds. */
+    std::chrono::milliseconds durationMs{0}; /**< Session duration in milliseconds. */
     double wpm;            /**< Net words-per-minute. */
     double wpmRaw;         /**< Raw words-per-minute. */
     double accuracy;       /**< Accuracy ratio (0.0–1.0). */
@@ -91,9 +92,25 @@ public:
      *  @return Average WPM, or 0.0 if there are no sessions. */
     double averageWpm();
 
+    // ---- Range-based iteration ----
+
+    /** @brief Iterator to the first session (lazy-loads from database). */
+    std::vector<SessionData>::iterator begin();
+    /** @brief Past-the-end iterator. */
+    std::vector<SessionData>::iterator end();
+    /** @brief Iterator to the first session (const overload). */
+    std::vector<SessionData>::const_iterator begin() const;
+    /** @brief Past-the-end iterator (const overload). */
+    std::vector<SessionData>::const_iterator end() const;
+
 private:
     friend class Engine;
+    void ensureCache() const;
+    void invalidateCache();
+
     ::Repository* m_impl;
+    mutable std::vector<SessionData> m_cache;
+    mutable bool m_cacheValid = false;
 };
 
 }
