@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include <error.h>
 
 #include <cpptypr/error.hpp>

@@ -69,9 +69,10 @@ public:
      *  @return true if the handle is connected to a registered callback. */
     explicit operator bool() const { return m_cb != nullptr; }
 
+    CallbackHandle(::Engine* engine, int event, int slotId, void* cb);
+
 private:
     friend class Engine;
-    CallbackHandle(::Engine* engine, int event, int slotId, void* cb);
 
     ::Engine* m_engine = nullptr;
     int m_event = 0;
