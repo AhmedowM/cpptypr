@@ -17,3 +17,8 @@ add_executable(cpptypr_test_repository test_repository.cpp)
 target_link_libraries(cpptypr_test_repository PRIVATE cpptypr)
 add_test(NAME cpptypr_repository COMMAND cpptypr_test_repository)
 set_tests_properties(cpptypr_repository PROPERTIES WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+set_tests_properties(
+    cpptypr_logger cpptypr_engine cpptypr_content cpptypr_repository
+    PROPERTIES TIMEOUT 120
+)

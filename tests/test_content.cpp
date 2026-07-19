@@ -11,8 +11,8 @@ static int test_count = 0;
 
 #define TEST(name) do { \
     test_count++; \
-    printf("  TEST %d: %s ... ", test_count, name); \
-    fflush(stdout); \
+    fprintf(stderr, "  TEST %d: %s ... ", test_count, name); \
+    fflush(stderr); \
 } while(0)
 
 #define PASS() do { \
@@ -250,7 +250,7 @@ int main() {
     test_provider_reset();
     test_provider_move();
 
-    printf("\n=== Results: %d passed, %d failed, %d total ===\n",
+    fprintf(stderr, "\n=== Results: %d passed, %d failed, %d total ===\n",
            tests_passed, tests_failed, test_count);
 
     return tests_failed > 0 ? 1 : 0;

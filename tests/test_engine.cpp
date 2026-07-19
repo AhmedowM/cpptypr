@@ -12,8 +12,8 @@ static int test_count = 0;
 
 #define TEST(name) do { \
     test_count++; \
-    printf("  TEST %d: %s ... ", test_count, name); \
-    fflush(stdout); \
+    fprintf(stderr, "  TEST %d: %s ... ", test_count, name); \
+    fflush(stderr); \
 } while(0)
 
 #define PASS() do { \
@@ -552,7 +552,7 @@ int main() {
     test_timeout_pause_does_not_accumulate();
     test_auto_save_session();
 
-    printf("\n=== Results: %d passed, %d failed, %d total ===\n",
+    fprintf(stderr, "\n=== Results: %d passed, %d failed, %d total ===\n",
            tests_passed, tests_failed, test_count);
 
     remove("test_autosave.db");
