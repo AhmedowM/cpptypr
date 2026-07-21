@@ -12,6 +12,7 @@
 #include <cpptypr/snapshot.hpp>
 
 struct Engine;
+struct EngineDeleter { void operator()(::Engine* p) const noexcept; };
 
 namespace cpptypr {
 
@@ -285,7 +286,7 @@ public:
     [[nodiscard]] CallbackHandle onError(std::function<void()> cb);
 
 private:
-    ::Engine* m_impl;
+    std::unique_ptr<::Engine, EngineDeleter> m_impl;
     std::unique_ptr<class Logger> m_defaultLogger;
     class Logger* m_logger;
 };

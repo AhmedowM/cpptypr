@@ -1,12 +1,14 @@
 #pragma once
 
 #include <iosfwd>
+#include <memory>
 #include <string>
 #include <string_view>
 
 #include <cpptypr/error.hpp>
 
 struct ContentProvider;
+struct ContentProviderDeleter { void operator()(::ContentProvider* p) const noexcept; };
 
 namespace cpptypr {
 
@@ -101,7 +103,7 @@ public:
 private:
     friend class Engine;
     explicit ContentProvider(::ContentProvider* p);
-    ::ContentProvider* m_impl;
+    std::unique_ptr<::ContentProvider, ContentProviderDeleter> m_impl;
 };
 
 }

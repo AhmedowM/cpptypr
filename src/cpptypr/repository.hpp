@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <memory>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -11,6 +12,7 @@
 #include <cpptypr/error.hpp>
 
 struct Repository;
+struct RepositoryDeleter { void operator()(::Repository* p) const noexcept; };
 
 namespace cpptypr {
 
@@ -115,7 +117,7 @@ private:
     void ensureCache() const;
     void invalidateCache();
 
-    ::Repository* m_impl;
+    std::unique_ptr<::Repository, RepositoryDeleter> m_impl;
     mutable std::mutex m_mutex;
     mutable std::vector<SessionData> m_cache;
     mutable bool m_cacheValid = false;

@@ -1,11 +1,13 @@
 #pragma once
 
 #include <iosfwd>
+#include <memory>
 #include <string_view>
 
 #include <cpptypr/error.hpp>
 
 struct Logger;
+struct LoggerDeleter { void operator()(::Logger* p) const noexcept; };
 
 namespace cpptypr {
 
@@ -99,7 +101,7 @@ public:
 
 private:
     friend class Engine;
-    ::Logger* m_impl;
+    std::unique_ptr<::Logger, LoggerDeleter> m_impl;
 };
 
 }

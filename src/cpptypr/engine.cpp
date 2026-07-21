@@ -15,6 +15,8 @@
 #include <string>
 #include <utility>
 
+void EngineDeleter::operator()(::Engine* p) const noexcept { ::engineDestroy(p); }
+
 namespace cpptypr {
 
 namespace {
@@ -53,110 +55,93 @@ Engine::Engine(EngineMode mode, ContentProvider& provider, uint16_t timeout)
         ::EngineConfig config{};
         config.mode = static_cast<::EngineMode>(mode);
         config.timeout = timeout;
-        config.contentProvider = provider.m_impl;
+        config.contentProvider = provider.m_impl.get();
         return ::engineCreate(&config);
     }()),
     m_defaultLogger(std::make_unique<Logger>(LogLevel::Warning, false)),
     m_logger(m_defaultLogger.get())
 {
-    ::engineSetLogger(m_impl, static_cast<::Logger*>(m_logger->m_impl));
+    ::engineSetLogger(m_impl.get(), m_logger->m_impl.get());
 }
 
-Engine::~Engine() { if (m_impl) { ::engineDestroy(m_impl); } }
+Engine::~Engine() = default;
 
-Engine::Engine(Engine&& other) noexcept
-    : m_impl(other.m_impl),
-      m_defaultLogger(std::move(other.m_defaultLogger)),
-      m_logger(other.m_logger)
-{
-    other.m_impl = nullptr;
-    other.m_logger = nullptr;
-}
+Engine::Engine(Engine&&) noexcept = default;
 
-Engine& Engine::operator=(Engine&& other) noexcept {
-    if (this != &other) {
-        if (m_impl) { ::engineDestroy(m_impl); }
-        m_impl = other.m_impl;
-        m_defaultLogger = std::move(other.m_defaultLogger);
-        m_logger = other.m_logger;
-        other.m_impl = nullptr;
-        other.m_logger = nullptr;
-    }
-    return *this;
-}
+Engine& Engine::operator=(Engine&&) noexcept = default;
 
-void Engine::start() { CHECK_MOVED(); ::engineStart(m_impl); }
-void Engine::stop() { CHECK_MOVED(); ::engineStop(m_impl); }
-void Engine::pause() { CHECK_MOVED(); ::enginePause(m_impl); }
-void Engine::resume() { CHECK_MOVED(); ::engineResume(m_impl); }
-void Engine::reset() { CHECK_MOVED(); ::engineReset(m_impl); }
+void Engine::start() { CHECK_MOVED(); ::engineStart(m_impl.get()); }
+void Engine::stop() { CHECK_MOVED(); ::engineStop(m_impl.get()); }
+void Engine::pause() { CHECK_MOVED(); ::enginePause(m_impl.get()); }
+void Engine::resume() { CHECK_MOVED(); ::engineResume(m_impl.get()); }
+void Engine::reset() { CHECK_MOVED(); ::engineReset(m_impl.get()); }
 
-void Engine::keyPress(char key) { CHECK_MOVED(); ::engineKeyPress(m_impl, key); }
-void Engine::backspacePress() { CHECK_MOVED(); ::engineBackspacePress(m_impl); }
+void Engine::keyPress(char key) { CHECK_MOVED(); ::engineKeyPress(m_impl.get(), key); }
+void Engine::backspacePress() { CHECK_MOVED(); ::engineBackspacePress(m_impl.get()); }
 
-bool Engine::isRunning() const { CHECK_MOVED(); return ::engineIsRunning(m_impl); }
-bool Engine::isPaused() const { CHECK_MOVED(); return ::engineIsPaused(m_impl); }
-bool Engine::isIdle() const { CHECK_MOVED(); return ::engineIsIdle(m_impl); }
-bool Engine::isError() const { CHECK_MOVED(); return ::engineIsError(m_impl); }
-bool Engine::isCompleted() const { CHECK_MOVED(); return ::engineIsCompleted(m_impl); }
-bool Engine::isTimedOut() const { CHECK_MOVED(); return ::engineIsTimedOut(m_impl); }
-bool Engine::isStopped() const { CHECK_MOVED(); return ::engineIsStopped(m_impl); }
-bool Engine::wasStopped() const { CHECK_MOVED(); return ::engineWasStopped(m_impl); }
+bool Engine::isRunning() const { CHECK_MOVED(); return ::engineIsRunning(m_impl.get()); }
+bool Engine::isPaused() const { CHECK_MOVED(); return ::engineIsPaused(m_impl.get()); }
+bool Engine::isIdle() const { CHECK_MOVED(); return ::engineIsIdle(m_impl.get()); }
+bool Engine::isError() const { CHECK_MOVED(); return ::engineIsError(m_impl.get()); }
+bool Engine::isCompleted() const { CHECK_MOVED(); return ::engineIsCompleted(m_impl.get()); }
+bool Engine::isTimedOut() const { CHECK_MOVED(); return ::engineIsTimedOut(m_impl.get()); }
+bool Engine::isStopped() const { CHECK_MOVED(); return ::engineIsStopped(m_impl.get()); }
+bool Engine::wasStopped() const { CHECK_MOVED(); return ::engineWasStopped(m_impl.get()); }
 
 SessionStats Engine::stats() const {
     CHECK_MOVED();
-    auto s = ::engineGetStats(m_impl);
+    auto s = ::engineGetStats(m_impl.get());
     return { std::chrono::milliseconds(s.durationMs), s.correctKeystrokes, s.incorrectKeystrokes, s.totalKeystrokes, s.accuracy, s.wpm, s.wpmRaw };
 }
 
-void Engine::setMode(EngineMode mode) { CHECK_MOVED(); ::engineSetMode(m_impl, static_cast<::EngineMode>(mode)); }
+void Engine::setMode(EngineMode mode) { CHECK_MOVED(); ::engineSetMode(m_impl.get(), static_cast<::EngineMode>(mode)); }
 void Engine::setMode(std::string_view mode) { CHECK_MOVED(); setMode(engineModeFromString(mode)); }
 
-EngineMode Engine::mode() const { CHECK_MOVED(); return static_cast<EngineMode>(::engineGetMode(m_impl)); }
+EngineMode Engine::mode() const { CHECK_MOVED(); return static_cast<EngineMode>(::engineGetMode(m_impl.get())); }
 
-void Engine::setTimeout(uint16_t seconds) { CHECK_MOVED(); ::engineSetTimeout(m_impl, seconds); }
+void Engine::setTimeout(uint16_t seconds) { CHECK_MOVED(); ::engineSetTimeout(m_impl.get(), seconds); }
 
-uint16_t Engine::timeout() const { CHECK_MOVED(); return ::engineGetTimeout(m_impl); }
+uint16_t Engine::timeout() const { CHECK_MOVED(); return ::engineGetTimeout(m_impl.get()); }
 
 void Engine::setContentProvider(ContentProvider& provider) {
     CHECK_MOVED();
-    ::engineSetContentProvider(m_impl, provider.m_impl);
+    ::engineSetContentProvider(m_impl.get(), provider.m_impl.get());
 }
 
 void Engine::clearContentProvider() {
     CHECK_MOVED();
-    ::engineSetContentProvider(m_impl, nullptr);
+    ::engineSetContentProvider(m_impl.get(), nullptr);
 }
 
 void Engine::setAutoSave(Repository& repo, bool enabled) {
     CHECK_MOVED();
-    ::engineSetAutoSave(m_impl, repo.m_impl, enabled);
+    ::engineSetAutoSave(m_impl.get(), repo.m_impl.get(), enabled);
 }
 
 void Engine::clearAutoSave() {
     CHECK_MOVED();
-    ::engineSetAutoSave(m_impl, nullptr, false);
+    ::engineSetAutoSave(m_impl.get(), nullptr, false);
 }
 
 void Engine::setLogger(Logger& logger) {
     CHECK_MOVED();
     m_logger = &logger;
-    ::engineSetLogger(m_impl, static_cast<::Logger*>(logger.m_impl));
+    ::engineSetLogger(m_impl.get(), logger.m_impl.get());
 }
 
 void Engine::resetLogger() {
     CHECK_MOVED();
     m_logger = m_defaultLogger.get();
-    ::engineSetLogger(m_impl, static_cast<::Logger*>(m_logger->m_impl));
+    ::engineSetLogger(m_impl.get(), m_logger->m_impl.get());
 }
 
 #define DEFINE_ON(name, c_event) \
 CallbackHandle Engine::on##name(std::function<void()> cb) { \
     CHECK_MOVED(); \
     auto* stored = new std::function<void()>(std::move(cb)); \
-    int slot = ::engineOn##name(m_impl, &callbackTrampoline, stored); \
+    int slot = ::engineOn##name(m_impl.get(), &callbackTrampoline, stored); \
     if (slot < 0) { delete stored; return CallbackHandle(); } \
-    return CallbackHandle(m_impl, c_event, slot, stored); \
+    return CallbackHandle(m_impl.get(), c_event, slot, stored); \
 }
 
 DEFINE_ON(Started, ENGINE_EVENT_STARTED)
@@ -215,7 +200,7 @@ void CallbackHandle::disconnect() {
 
 Snapshot Engine::getSnapshot() {
     CHECK_MOVED();
-    return Snapshot(::engineGetSnapshot(m_impl));
+    return Snapshot(::engineGetSnapshot(m_impl.get()));
 }
 
 }

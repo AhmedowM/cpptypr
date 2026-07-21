@@ -3,6 +3,8 @@
 #include <cpptypr/content.hpp>
 #include <cpptypr/detail.hpp>
 
+void ContentProviderDeleter::operator()(::ContentProvider* p) const noexcept { ::contentProviderDestroy(p); }
+
 #include <ostream>
 #include <string>
 
@@ -47,33 +49,26 @@ ContentProvider ContentProvider::fromWeb(std::string_view url) {
 
 ContentProvider::ContentProvider(::ContentProvider* p) : m_impl(p) {}
 
-ContentProvider::~ContentProvider() { if (m_impl) { ::contentProviderDestroy(m_impl); } }
+ContentProvider::~ContentProvider() = default;
 
-ContentProvider::ContentProvider(ContentProvider&& other) noexcept : m_impl(other.m_impl) { other.m_impl = nullptr; }
+ContentProvider::ContentProvider(ContentProvider&&) noexcept = default;
 
-ContentProvider& ContentProvider::operator=(ContentProvider&& other) noexcept {
-    if (this != &other) {
-        if (m_impl) { ::contentProviderDestroy(m_impl); }
-        m_impl = other.m_impl;
-        other.m_impl = nullptr;
-    }
-    return *this;
-}
+ContentProvider& ContentProvider::operator=(ContentProvider&&) noexcept = default;
 
-void ContentProvider::setMode(ContentMode mode) { CHECK_MOVED(); ::contentProviderSetMode(m_impl, static_cast<::ContentMode>(mode)); }
+void ContentProvider::setMode(ContentMode mode) { CHECK_MOVED(); ::contentProviderSetMode(m_impl.get(), static_cast<::ContentMode>(mode)); }
 void ContentProvider::setMode(std::string_view mode) { CHECK_MOVED(); setMode(contentModeFromString(mode)); }
 
-void ContentProvider::setContentLimit(size_t limit) { CHECK_MOVED(); ::contentProviderSetContentLimit(m_impl, limit); }
+void ContentProvider::setContentLimit(size_t limit) { CHECK_MOVED(); ::contentProviderSetContentLimit(m_impl.get(), limit); }
 
 ContentChunk ContentProvider::getNext() {
     CHECK_MOVED();
-    auto c = ::contentProviderGetNext(m_impl);
+    auto c = ::contentProviderGetNext(m_impl.get());
     if (c.length == 0) return ContentChunk{};
     return ContentChunk{ std::string(c.text, c.length) };
 }
 
-void ContentProvider::reset() { CHECK_MOVED(); ::contentProviderReset(m_impl); }
+void ContentProvider::reset() { CHECK_MOVED(); ::contentProviderReset(m_impl.get()); }
 
-bool ContentProvider::isExhausted() const { CHECK_MOVED(); return ::contentProviderIsExhausted(m_impl); }
+bool ContentProvider::isExhausted() const { CHECK_MOVED(); return ::contentProviderIsExhausted(m_impl.get()); }
 
 }

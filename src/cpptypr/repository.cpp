@@ -3,6 +3,8 @@
 #include <cpptypr/repository.hpp>
 #include <cpptypr/detail.hpp>
 
+void RepositoryDeleter::operator()(::Repository* p) const noexcept { ::repositoryDestroy(p); }
+
 #include <chrono>
 #include <cstring>
 #include <cstdlib>
@@ -23,15 +25,14 @@ std::ostream& operator<<(std::ostream& os, const SessionData& data) {
 
 Repository::Repository(std::string_view dbPath) : m_impl(::repositoryCreate(std::string(dbPath).c_str())) {}
 
-Repository::~Repository() { if (m_impl) { ::repositoryDestroy(m_impl); } }
+Repository::~Repository() = default;
 
-Repository::Repository(Repository&& other) noexcept : m_impl(other.m_impl) { other.m_impl = nullptr; }
+Repository::Repository(Repository&& other) noexcept : m_impl(std::move(other.m_impl)) {}
 
 Repository& Repository::operator=(Repository&& other) noexcept {
     if (this != &other) {
-        if (m_impl) { ::repositoryDestroy(m_impl); }
-        m_impl = other.m_impl;
-        other.m_impl = nullptr;
+        m_impl = std::move(other.m_impl);
+        invalidateCache();
     }
     return *this;
 }
@@ -53,14 +54,14 @@ int64_t Repository::saveSession(const SessionData& data) {
     cd.wpm = data.wpm;
     cd.wpmRaw = data.wpmRaw;
     cd.accuracy = data.accuracy;
-    auto id = ::repositorySaveSession(m_impl, &cd);
+    auto id = ::repositorySaveSession(m_impl.get(), &cd);
     invalidateCache();
     return id;
 }
 
 std::optional<SessionData> Repository::getSession(int64_t id) const {
     CHECK_MOVED();
-    auto cd = ::repositoryGetSession(m_impl, id);
+    auto cd = ::repositoryGetSession(m_impl.get(), id);
     if (cd.id == 0) { return std::nullopt; }
     return SessionData{ cd.id, cd.timestamp, cd.mode,
         cd.totalChars, cd.correctChars, std::chrono::milliseconds(cd.durationMs),
@@ -70,7 +71,7 @@ std::optional<SessionData> Repository::getSession(int64_t id) const {
 std::vector<SessionData> Repository::getAll() const {
     CHECK_MOVED();
     size_t count;
-    auto* arr = ::repositoryGetAll(m_impl, &count);
+    auto* arr = ::repositoryGetAll(m_impl.get(), &count);
     if (!arr) { return {}; }
     std::vector<SessionData> result;
     result.reserve(count);
@@ -86,7 +87,7 @@ std::vector<SessionData> Repository::getAll() const {
 std::vector<SessionData> Repository::getRecent(int64_t limit) const {
     CHECK_MOVED();
     size_t count;
-    auto* arr = ::repositoryGetRecent(m_impl, limit, &count);
+    auto* arr = ::repositoryGetRecent(m_impl.get(), limit, &count);
     if (!arr) { return {}; }
     std::vector<SessionData> result;
     result.reserve(count);
@@ -99,23 +100,23 @@ std::vector<SessionData> Repository::getRecent(int64_t limit) const {
     return result;
 }
 
-int64_t Repository::count() const { CHECK_MOVED(); return ::repositoryGetCount(m_impl); }
+int64_t Repository::count() const { CHECK_MOVED(); return ::repositoryGetCount(m_impl.get()); }
 
 bool Repository::deleteSession(int64_t id) {
     CHECK_MOVED();
     invalidateCache();
-    return ::repositoryDeleteSession(m_impl, id);
+    return ::repositoryDeleteSession(m_impl.get(), id);
 }
 
 void Repository::clearAll() {
     CHECK_MOVED();
     invalidateCache();
-    ::repositoryClearAll(m_impl);
+    ::repositoryClearAll(m_impl.get());
 }
 
 std::optional<SessionData> Repository::bestWpm() const {
     CHECK_MOVED();
-    auto cd = ::repositoryGetBestWpm(m_impl);
+    auto cd = ::repositoryGetBestWpm(m_impl.get());
     if (cd.id == 0) { return std::nullopt; }
     return SessionData{ cd.id, cd.timestamp, cd.mode,
         cd.totalChars, cd.correctChars, std::chrono::milliseconds(cd.durationMs),
@@ -124,14 +125,14 @@ std::optional<SessionData> Repository::bestWpm() const {
 
 std::optional<SessionData> Repository::bestRawWpm() const {
     CHECK_MOVED();
-    auto cd = ::repositoryGetBestRawWpm(m_impl);
+    auto cd = ::repositoryGetBestRawWpm(m_impl.get());
     if (cd.id == 0) { return std::nullopt; }
     return SessionData{ cd.id, cd.timestamp, cd.mode,
         cd.totalChars, cd.correctChars, std::chrono::milliseconds(cd.durationMs),
         cd.wpm, cd.wpmRaw, cd.accuracy };
 }
 
-double Repository::averageWpm() const { CHECK_MOVED(); return ::repositoryGetAverageWpm(m_impl); }
+double Repository::averageWpm() const { CHECK_MOVED(); return ::repositoryGetAverageWpm(m_impl.get()); }
 
 void Repository::ensureCache() const {
     std::lock_guard<std::mutex> lock(m_mutex);

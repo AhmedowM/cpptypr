@@ -3,6 +3,8 @@
 #include <cpptypr/logger.hpp>
 #include <cpptypr/detail.hpp>
 
+void LoggerDeleter::operator()(::Logger* p) const noexcept { ::loggerDestroy(p); }
+
 #include <ostream>
 
 namespace cpptypr {
@@ -38,34 +40,27 @@ Logger::Logger(LogLevel level, bool enableStdout)
 Logger::Logger(std::string_view level, bool enableStdout)
     : Logger(logLevelFromString(level), enableStdout) {}
 
-Logger::~Logger() { if (m_impl) { ::loggerDestroy(m_impl); } }
+Logger::~Logger() = default;
 
-Logger::Logger(Logger&& other) noexcept : m_impl(other.m_impl) { other.m_impl = nullptr; }
+Logger::Logger(Logger&&) noexcept = default;
 
-Logger& Logger::operator=(Logger&& other) noexcept {
-    if (this != &other) {
-        if (m_impl) { ::loggerDestroy(m_impl); }
-        m_impl = other.m_impl;
-        other.m_impl = nullptr;
-    }
-    return *this;
-}
+Logger& Logger::operator=(Logger&&) noexcept = default;
 
-void Logger::setLevel(LogLevel level) { CHECK_MOVED(); ::loggerSetLevel(m_impl, static_cast<::LogLevel>(level)); }
+void Logger::setLevel(LogLevel level) { CHECK_MOVED(); ::loggerSetLevel(m_impl.get(), static_cast<::LogLevel>(level)); }
 void Logger::setLevel(std::string_view level) { CHECK_MOVED(); setLevel(logLevelFromString(level)); }
 
-LogLevel Logger::level() const { CHECK_MOVED(); return static_cast<LogLevel>(::loggerGetLevel(m_impl)); }
+LogLevel Logger::level() const { CHECK_MOVED(); return static_cast<LogLevel>(::loggerGetLevel(m_impl.get())); }
 
-void Logger::logToStdout(bool enable) { CHECK_MOVED(); ::loggerLogToStdout(m_impl, enable); }
+void Logger::logToStdout(bool enable) { CHECK_MOVED(); ::loggerLogToStdout(m_impl.get(), enable); }
 
 bool Logger::addFile(std::string_view filepath) {
     CHECK_MOVED();
-    return ::loggerAddFile(m_impl, std::string(filepath).c_str());
+    return ::loggerAddFile(m_impl.get(), std::string(filepath).c_str());
 }
 
 void Logger::log(LogLevel level, std::string_view message) {
     CHECK_MOVED();
-    ::loggerLog(m_impl, static_cast<::LogLevel>(level), std::string(message).c_str());
+    ::loggerLog(m_impl.get(), static_cast<::LogLevel>(level), std::string(message).c_str());
 }
 
 void Logger::log(std::string_view level, std::string_view message) {
