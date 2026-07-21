@@ -36,4 +36,4 @@ jobs:
 
       - name: Test
         working-directory: build
-        run: ctest --output-on-failure -C ${{ matrix.config }}
+        run: ctest --output-on-failure -C ${{ matrix.config }} -V
