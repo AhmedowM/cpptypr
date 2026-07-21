@@ -10,6 +10,8 @@
 
 namespace cpptypr {
 
+class Engine;
+
 enum class EngineState {
     Idle,
     Running,
@@ -41,7 +43,7 @@ public:
     [[nodiscard]] StopCause stopCause() const noexcept;
 
 private:
-    friend class Engine;
+    friend Engine;
     explicit Snapshot(const ::EngineSnapshot& snap);
     ::EngineSnapshot m_snap;
 };
