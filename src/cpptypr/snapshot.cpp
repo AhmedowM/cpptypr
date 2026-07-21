@@ -1,5 +1,7 @@
 #include <snapshot.h>
 
+#include <memory>
+
 #include <cpptypr/snapshot.hpp>
 
 namespace cpptypr {
@@ -26,27 +28,30 @@ std::string_view toString(StopCause cause) noexcept {
     return "none";
 }
 
-Snapshot::Snapshot(const ::EngineSnapshot& snap) : m_snap(snap) {}
+Snapshot::Snapshot(const ::EngineSnapshot& snap) : m_snap(std::make_unique<::EngineSnapshot>(snap)) {}
+Snapshot::~Snapshot() = default;
+Snapshot::Snapshot(Snapshot&&) noexcept = default;
+Snapshot& Snapshot::operator=(Snapshot&&) noexcept = default;
 
-std::string_view Snapshot::text() const noexcept { return std::string_view(m_snap.text, m_snap.length); }
+std::string_view Snapshot::text() const noexcept { return std::string_view(m_snap->text, m_snap->length); }
 
-size_t Snapshot::length() const noexcept { return m_snap.length; }
+size_t Snapshot::length() const noexcept { return m_snap->length; }
 
-uint32_t Snapshot::cursorIndex() const noexcept { return m_snap.cursorIndex; }
+uint32_t Snapshot::cursorIndex() const noexcept { return m_snap->cursorIndex; }
 
-char Snapshot::expectedChar() const noexcept { return m_snap.expectedChar; }
+char Snapshot::expectedChar() const noexcept { return m_snap->expectedChar; }
 
 bool Snapshot::isIncorrect(size_t index) const {
-    return index < m_snap.length && m_snap.incorrectFlags[index];
+    return index < m_snap->length && m_snap->incorrectFlags[index];
 }
 
 SessionStats Snapshot::stats() const noexcept {
-    auto& s = m_snap.stats;
+    auto& s = m_snap->stats;
     return { std::chrono::milliseconds(s.durationMs), s.correctKeystrokes, s.incorrectKeystrokes, s.totalKeystrokes, s.accuracy, s.wpm, s.wpmRaw };
 }
 
 EngineState Snapshot::state() const noexcept {
-    switch (m_snap.state) {
+    switch (m_snap->state) {
         case ::ENGINE_IDLE:    return EngineState::Idle;
         case ::ENGINE_RUNNING: return EngineState::Running;
         case ::ENGINE_PAUSED:  return EngineState::Paused;
@@ -56,7 +61,7 @@ EngineState Snapshot::state() const noexcept {
 }
 
 StopCause Snapshot::stopCause() const noexcept {
-    switch (m_snap.stopCause) {
+    switch (m_snap->stopCause) {
         case ::ENGINE_STOP_CAUSE_NONE:     return StopCause::None;
         case ::ENGINE_STOP_CAUSE_TIMEOUT:  return StopCause::Timeout;
         case ::ENGINE_STOP_CAUSE_FINISHED: return StopCause::Finished;

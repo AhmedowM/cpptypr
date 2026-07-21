@@ -2,11 +2,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string_view>
 
-#include <snapshot.h>
-
 #include <cpptypr/stats.hpp>
+
+struct EngineSnapshot;
 
 namespace cpptypr {
 
@@ -82,10 +83,14 @@ public:
      *  @return StopCause indicating None, Timeout, Finished, User, Error, or Unknown. */
     [[nodiscard]] StopCause stopCause() const noexcept;
 
+    ~Snapshot();
+    Snapshot(Snapshot&&) noexcept;
+    Snapshot& operator=(Snapshot&&) noexcept;
+
 private:
     friend Engine;
     explicit Snapshot(const ::EngineSnapshot& snap);
-    ::EngineSnapshot m_snap;
+    std::unique_ptr<::EngineSnapshot> m_snap;
 };
 
 }

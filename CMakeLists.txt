@@ -146,8 +146,8 @@ endif()
 # be distributed with the C++ package.
 install(CODE [[
     file(REMOVE_RECURSE
-        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/ctypr"
-        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/ctypr.h"
+        "${CMAKE_INSTALL_PREFIX}/include/ctypr"
+        "${CMAKE_INSTALL_PREFIX}/include/ctypr.h"
     )
 ]])
 
