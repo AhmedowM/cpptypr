@@ -141,4 +141,14 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 endif()
 
+# ---- Remove ctypr C headers from install ----
+# ctypr is a build-time dependency; its C headers should not
+# be distributed with the C++ package.
+install(CODE [[
+    file(REMOVE_RECURSE
+        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/ctypr"
+        "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}/ctypr.h"
+    )
+]])
+
 include(CPack)
