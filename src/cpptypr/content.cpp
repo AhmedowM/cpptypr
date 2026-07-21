@@ -67,7 +67,7 @@ void ContentProvider::setContentLimit(size_t limit) { CHECK_MOVED(); ::contentPr
 ContentChunk ContentProvider::getNext() {
     CHECK_MOVED();
     auto c = ::contentProviderGetNext(m_impl);
-    if (c.length == 0) return ContentChunk{};
+    if (!c.text) return ContentChunk{};
     return ContentChunk{ std::string(c.text, c.length) };
 }
 
