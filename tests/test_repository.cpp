@@ -43,7 +43,7 @@ static void cleanupTestDb() {
 static cpptypr::SessionData makeSession(const char* mode = "strict") {
     cpptypr::SessionData s{};
     s.id = 0;
-    s.timestamp = "2026-07-09T12:00:00+0000";
+    s.timestamp = "2026-07-09 12:00:00";
     s.mode = mode;
     s.totalChars = 100;
     s.correctChars = 95;

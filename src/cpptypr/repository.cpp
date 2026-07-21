@@ -1,6 +1,7 @@
 #include <repository.h>
 
 #include <cpptypr/repository.hpp>
+#include <cpptypr/detail.hpp>
 
 #include <chrono>
 #include <cstring>
@@ -8,8 +9,6 @@
 #include <string>
 
 namespace cpptypr {
-
-#define CHECK_MOVED() do { if (!m_impl) throw Error(ErrorCode::State); } while(0)
 
 Repository::Repository(std::string_view dbPath) : m_impl(::repositoryCreate(std::string(dbPath).c_str())) {}
 
@@ -29,6 +28,9 @@ Repository& Repository::operator=(Repository&& other) noexcept {
 int64_t Repository::saveSession(const SessionData& data) {
     CHECK_MOVED();
     ::SessionData cd{};
+    if (data.timestamp.size() >= sizeof(cd.timestamp) || data.mode.size() >= sizeof(cd.mode)) {
+        throw Error(ErrorCode::Config);
+    }
     cd.id = data.id;
     std::strncpy(cd.timestamp, data.timestamp.c_str(), sizeof(cd.timestamp) - 1);
     cd.timestamp[sizeof(cd.timestamp) - 1] = '\0';
@@ -45,7 +47,7 @@ int64_t Repository::saveSession(const SessionData& data) {
     return id;
 }
 
-std::optional<SessionData> Repository::getSession(int64_t id) {
+std::optional<SessionData> Repository::getSession(int64_t id) const {
     CHECK_MOVED();
     auto cd = ::repositoryGetSession(m_impl, id);
     if (cd.id == 0) { return std::nullopt; }
@@ -54,7 +56,7 @@ std::optional<SessionData> Repository::getSession(int64_t id) {
         cd.wpm, cd.wpmRaw, cd.accuracy };
 }
 
-std::vector<SessionData> Repository::getAll() {
+std::vector<SessionData> Repository::getAll() const {
     CHECK_MOVED();
     size_t count;
     auto* arr = ::repositoryGetAll(m_impl, &count);
@@ -70,7 +72,7 @@ std::vector<SessionData> Repository::getAll() {
     return result;
 }
 
-std::vector<SessionData> Repository::getRecent(int64_t limit) {
+std::vector<SessionData> Repository::getRecent(int64_t limit) const {
     CHECK_MOVED();
     size_t count;
     auto* arr = ::repositoryGetRecent(m_impl, limit, &count);
@@ -86,7 +88,7 @@ std::vector<SessionData> Repository::getRecent(int64_t limit) {
     return result;
 }
 
-int64_t Repository::count() { CHECK_MOVED(); return ::repositoryGetCount(m_impl); }
+int64_t Repository::count() const { CHECK_MOVED(); return ::repositoryGetCount(m_impl); }
 
 bool Repository::deleteSession(int64_t id) {
     CHECK_MOVED();
@@ -100,7 +102,7 @@ void Repository::clearAll() {
     ::repositoryClearAll(m_impl);
 }
 
-std::optional<SessionData> Repository::bestWpm() {
+std::optional<SessionData> Repository::bestWpm() const {
     CHECK_MOVED();
     auto cd = ::repositoryGetBestWpm(m_impl);
     if (cd.id == 0) { return std::nullopt; }
@@ -109,7 +111,7 @@ std::optional<SessionData> Repository::bestWpm() {
         cd.wpm, cd.wpmRaw, cd.accuracy };
 }
 
-std::optional<SessionData> Repository::bestRawWpm() {
+std::optional<SessionData> Repository::bestRawWpm() const {
     CHECK_MOVED();
     auto cd = ::repositoryGetBestRawWpm(m_impl);
     if (cd.id == 0) { return std::nullopt; }
@@ -118,9 +120,10 @@ std::optional<SessionData> Repository::bestRawWpm() {
         cd.wpm, cd.wpmRaw, cd.accuracy };
 }
 
-double Repository::averageWpm() { CHECK_MOVED(); return ::repositoryGetAverageWpm(m_impl); }
+double Repository::averageWpm() const { CHECK_MOVED(); return ::repositoryGetAverageWpm(m_impl); }
 
 void Repository::ensureCache() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_cacheValid) {
         const_cast<Repository*>(this)->m_cache = const_cast<Repository*>(this)->getAll();
         const_cast<Repository*>(this)->m_cacheValid = true;
@@ -128,6 +131,7 @@ void Repository::ensureCache() const {
 }
 
 void Repository::invalidateCache() {
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_cacheValid = false;
     m_cache.clear();
 }

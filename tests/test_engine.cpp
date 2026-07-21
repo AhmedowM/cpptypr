@@ -496,6 +496,94 @@ static void test_timeout_pause_does_not_accumulate() {
     PASS();
 }
 
+// ===== Snapshot =====
+
+static void test_snapshot_before_start() {
+    TEST("Snapshot: before start returns idle state");
+    auto e = makeEngine(cpptypr::EngineMode::Strict);
+    auto snap = e.getSnapshot();
+    ASSERT(snap.state() == cpptypr::EngineState::Idle, "state should be Idle");
+    ASSERT(snap.length() == 0, "text length should be 0");
+    ASSERT(snap.cursorIndex() == 0, "cursor should be 0");
+    ASSERT(snap.expectedChar() == '\0', "expectedChar should be null");
+    PASS();
+}
+
+static void test_snapshot_after_start() {
+    TEST("Snapshot: after start has text and first expected char");
+    auto e = makeEngine(cpptypr::EngineMode::Strict);
+    e.start();
+    auto snap = e.getSnapshot();
+    ASSERT(snap.state() == cpptypr::EngineState::Running, "state should be Running");
+    ASSERT(snap.length() > 0, "text should have content");
+    ASSERT(snap.cursorIndex() == 0, "cursor should be at start");
+    ASSERT(snap.expectedChar() == 'T', "expectedChar should be 'T'");
+    PASS();
+}
+
+static void test_snapshot_incorrect_flags() {
+    TEST("Snapshot: incorrect flags set on wrong key");
+    auto e = makeEngine(cpptypr::EngineMode::Strict);
+    e.start();
+    e.keyPress('X');
+    auto snap = e.getSnapshot();
+    ASSERT(snap.cursorIndex() == 0, "cursor should not advance on wrong key in strict mode");
+    ASSERT(snap.isIncorrect(0), "flag 0 should be set for wrong key");
+    ASSERT(snap.expectedChar() == 'T', "expectedChar should still be 'T'");
+    PASS();
+}
+
+static void test_snapshot_after_completion() {
+    TEST("Snapshot: after completion cursor equals length");
+    auto e = makeEngine(cpptypr::EngineMode::Strict);
+    e.start();
+    const char* text = "The quick brown fox jumps over the lazy dog.";
+    for (const char* p = text; *p; p++) { e.keyPress(*p); }
+    auto snap = e.getSnapshot();
+    ASSERT(snap.state() == cpptypr::EngineState::Idle, "state should be Idle after completion");
+    ASSERT(snap.stopCause() == cpptypr::StopCause::Finished, "stopCause should be Finished");
+    ASSERT(snap.cursorIndex() == snap.length(), "cursor should equal length");
+    ASSERT(snap.expectedChar() == '\0', "expectedChar should be null after completion");
+    ASSERT(snap.stats().correctKeystrokes == 44, "all 44 keystrokes should be correct");
+    PASS();
+}
+
+static void test_snapshot_flow_backspace() {
+    TEST("Snapshot: backspace clears incorrect flag in flow mode");
+    auto e = makeEngine(cpptypr::EngineMode::Flow);
+    e.start();
+    e.keyPress('X');
+    auto snap1 = e.getSnapshot();
+    ASSERT(snap1.isIncorrect(0), "flag should be set after wrong key");
+    e.backspacePress();
+    auto snap2 = e.getSnapshot();
+    ASSERT(!snap2.isIncorrect(0), "flag should be cleared after backspace");
+    ASSERT(snap2.cursorIndex() == 0, "cursor should return to start");
+    PASS();
+}
+
+// ===== Enum toString =====
+
+static void test_engine_state_to_string() {
+    TEST("EngineState: toString returns correct strings");
+    ASSERT(cpptypr::toString(cpptypr::EngineState::Idle) == "idle", "Idle -> idle");
+    ASSERT(cpptypr::toString(cpptypr::EngineState::Running) == "running", "Running -> running");
+    ASSERT(cpptypr::toString(cpptypr::EngineState::Paused) == "paused", "Paused -> paused");
+    ASSERT(cpptypr::toString(cpptypr::EngineState::Error) == "error", "Error -> error");
+    PASS();
+}
+
+static void test_stop_cause_to_string() {
+    TEST("StopCause: toString returns correct strings");
+    ASSERT(cpptypr::toString(cpptypr::StopCause::None) == "none", "None -> none");
+    ASSERT(cpptypr::toString(cpptypr::StopCause::Timeout) == "timeout", "Timeout -> timeout");
+    ASSERT(cpptypr::toString(cpptypr::StopCause::Finished) == "finished", "Finished -> finished");
+    ASSERT(cpptypr::toString(cpptypr::StopCause::User) == "user", "User -> user");
+    ASSERT(cpptypr::toString(cpptypr::StopCause::Error) == "error", "Error -> error");
+    ASSERT(cpptypr::toString(cpptypr::StopCause::Unknown) == "unknown", "Unknown -> unknown");
+    PASS();
+}
+
 // ===== Auto-save =====
 
 static void test_auto_save_session() {
@@ -550,6 +638,15 @@ int main() {
     test_timeout_zero_disabled();
     test_timeout_triggers();
     test_timeout_pause_does_not_accumulate();
+
+    test_snapshot_before_start();
+    test_snapshot_after_start();
+    test_snapshot_incorrect_flags();
+    test_snapshot_after_completion();
+    test_snapshot_flow_backspace();
+    test_engine_state_to_string();
+    test_stop_cause_to_string();
+
     test_auto_save_session();
 
     fprintf(stderr, "\n=== Results: %d passed, %d failed, %d total ===\n",

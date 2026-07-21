@@ -1,24 +1,9 @@
 #include <logger.h>
 
 #include <cpptypr/logger.hpp>
-
-#include <cctype>
-#include <string>
+#include <cpptypr/detail.hpp>
 
 namespace cpptypr {
-
-#define CHECK_MOVED() do { if (!m_impl) throw Error(ErrorCode::State); } while(0)
-
-namespace {
-
-std::string toLower(std::string_view s) {
-    std::string out;
-    out.reserve(s.size());
-    for (auto c : s) { out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c)))); }
-    return out;
-}
-
-}
 
 std::string_view toString(LogLevel level) noexcept {
     switch (level) {
@@ -34,7 +19,7 @@ std::string_view toString(LogLevel level) noexcept {
 namespace detail {
 
 LogLevel parseLogLevel(std::string_view s) {
-    auto lower = toLower(s);
+    auto lower = cpptypr::detail::toLower(s);
     if (lower == "debug")   return LogLevel::Debug;
     if (lower == "info")    return LogLevel::Info;
     if (lower == "warning") return LogLevel::Warning;

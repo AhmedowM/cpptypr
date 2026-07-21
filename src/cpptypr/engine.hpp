@@ -7,6 +7,8 @@
 #include <string_view>
 
 #include <cpptypr/error.hpp>
+#include <cpptypr/stats.hpp>
+#include <cpptypr/snapshot.hpp>
 
 struct Engine;
 
@@ -15,6 +17,7 @@ namespace cpptypr {
 class ContentProvider;
 class Repository;
 class Logger;
+class Snapshot;
 
 /** @brief Typing modes supported by the engine. */
 enum class EngineMode {
@@ -34,17 +37,6 @@ namespace detail {
      *  @throws Error if the string does not match any valid mode. */
     [[nodiscard]] EngineMode parseEngineMode(std::string_view s);
 }
-
-/** @brief Snapshot of typing session statistics. */
-struct SessionStats {
-        std::chrono::milliseconds durationMs{0}; /**< Total session duration in milliseconds. */
-    uint32_t correctKeystrokes;  /**< Number of correct keystrokes. */
-    uint32_t incorrectKeystrokes;/**< Number of incorrect keystrokes. */
-    uint32_t totalKeystrokes;    /**< Total keystrokes (correct + incorrect). */
-    double accuracy;             /**< Accuracy ratio (0.0–1.0). */
-    double wpm;                  /**< Net words-per-minute (penalises mistakes). */
-    double wpmRaw;               /**< Raw words-per-minute (no penalty). */
-};
 
 /** @brief RAII handle that disconnects an event callback on destruction.
  *
@@ -112,6 +104,10 @@ public:
 
     Engine(Engine&&) noexcept;
     Engine& operator=(Engine&&) noexcept;
+
+    /** @brief Get a point-in-time snapshot of the engine state.
+     *  @return A Snapshot containing text, cursor, stats, and flags. */
+    [[nodiscard]] Snapshot getSnapshot();
 
     // ---- Lifecycle ----
 

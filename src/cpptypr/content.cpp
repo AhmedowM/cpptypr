@@ -1,25 +1,11 @@
 #include <content.h>
 
 #include <cpptypr/content.hpp>
-#include <cpptypr/logger.hpp>
+#include <cpptypr/detail.hpp>
 
-#include <cctype>
 #include <string>
 
 namespace cpptypr {
-
-#define CHECK_MOVED() do { if (!m_impl) throw Error(ErrorCode::State); } while(0)
-
-namespace {
-
-std::string toLower(std::string_view s) {
-    std::string out;
-    out.reserve(s.size());
-    for (auto c : s) { out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c)))); }
-    return out;
-}
-
-}
 
 std::string_view toString(ContentMode mode) noexcept {
     switch (mode) {
@@ -33,7 +19,7 @@ std::string_view toString(ContentMode mode) noexcept {
 namespace detail {
 
 ContentMode parseContentMode(std::string_view s) {
-    auto lower = toLower(s);
+    auto lower = cpptypr::detail::toLower(s);
     if (lower == "sentences")    return ContentMode::Sentences;
     if (lower == "commonwords")  return ContentMode::CommonWords;
     if (lower == "randomwords")  return ContentMode::RandomWords;
@@ -81,6 +67,7 @@ void ContentProvider::setContentLimit(size_t limit) { CHECK_MOVED(); ::contentPr
 ContentChunk ContentProvider::getNext() {
     CHECK_MOVED();
     auto c = ::contentProviderGetNext(m_impl);
+    if (!c.text) return ContentChunk{};
     return ContentChunk{ std::string(c.text, c.length) };
 }
 

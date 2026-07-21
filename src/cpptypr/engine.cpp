@@ -3,29 +3,24 @@
 #include <repository.h>
 #include <state.h>
 #include <stats.h>
+#include <snapshot.h>
 
 #include <cpptypr/engine.hpp>
 #include <cpptypr/content.hpp>
 #include <cpptypr/repository.hpp>
 #include <cpptypr/logger.hpp>
+#include <cpptypr/detail.hpp>
 
-#include <new>
 #include <string>
 #include <utility>
 
-#include <cctype>
-
 namespace cpptypr {
-
-#define CHECK_MOVED() do { if (!m_impl) throw Error(ErrorCode::State); } while(0)
 
 namespace {
 
-std::string toLower(std::string_view s) {
-    std::string out;
-    out.reserve(s.size());
-    for (auto c : s) { out.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c)))); }
-    return out;
+void callbackTrampoline(::Engine*, void* userData) {
+    auto cb = static_cast<std::function<void()>*>(userData);
+    (*cb)();
 }
 
 }
@@ -41,19 +36,10 @@ std::string_view toString(EngineMode mode) noexcept {
 namespace detail {
 
 EngineMode parseEngineMode(std::string_view s) {
-    auto lower = toLower(s);
+    auto lower = cpptypr::detail::toLower(s);
     if (lower == "strict") return EngineMode::Strict;
     if (lower == "flow")   return EngineMode::Flow;
     throw Error(ErrorCode::InvalidMode);
-}
-
-}
-
-namespace {
-
-void callbackTrampoline(::Engine*, void* userData) {
-    auto cb = static_cast<std::function<void()>*>(userData);
-    (*cb)();
 }
 
 }
@@ -69,7 +55,7 @@ Engine::Engine(EngineMode mode, ContentProvider& provider, uint16_t timeout)
         config.contentProvider = provider.m_impl;
         return ::engineCreate(&config);
     }()),
-    m_defaultLogger(std::make_unique<Logger>(LogLevel::Debug, true)),
+    m_defaultLogger(std::make_unique<Logger>(LogLevel::Warning, false)),
     m_logger(m_defaultLogger.get())
 {
     ::engineSetLogger(m_impl, static_cast<::Logger*>(m_logger->m_impl));
@@ -144,9 +130,6 @@ void Engine::clearContentProvider() {
 void Engine::setAutoSave(Repository& repo, bool enabled) {
     CHECK_MOVED();
     ::engineSetAutoSave(m_impl, repo.m_impl, enabled);
-    if (m_logger) {
-        ::repositorySetLogger(repo.m_impl, static_cast<::Logger*>(m_logger->m_impl));
-    }
 }
 
 void Engine::clearAutoSave() {
@@ -227,6 +210,11 @@ void CallbackHandle::disconnect() {
     m_engine = nullptr;
     m_event = 0;
     m_slotId = -1;
+}
+
+Snapshot Engine::getSnapshot() {
+    CHECK_MOVED();
+    return Snapshot(::engineGetSnapshot(m_impl));
 }
 
 }

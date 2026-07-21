@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -26,7 +27,7 @@ struct SessionData {
     std::chrono::milliseconds durationMs{0}; /**< Session duration in milliseconds. */
     double wpm;            /**< Net words-per-minute. */
     double wpmRaw;         /**< Raw words-per-minute. */
-    double accuracy;       /**< Accuracy ratio (0.0–1.0). */
+    double accuracy;       /**< Accuracy percentage (0.0–100.0). */
 };
 
 /** @brief RAII wrapper that persists session data to a SQLite database.
@@ -57,20 +58,20 @@ public:
     /** @brief Retrieve a session by ID.
      *  @param id The session identifier.
      *  @return The SessionData, or std::nullopt if not found. */
-    std::optional<SessionData> getSession(int64_t id);
+    std::optional<SessionData> getSession(int64_t id) const;
 
     /** @brief Get all sessions in the database.
      *  @return A vector of all saved sessions. */
-    std::vector<SessionData> getAll();
+    std::vector<SessionData> getAll() const;
 
     /** @brief Get the most recent sessions.
      *  @param limit Maximum number of sessions to return.
      *  @return A vector of up to `limit` sessions, most recent first. */
-    std::vector<SessionData> getRecent(int64_t limit);
+    std::vector<SessionData> getRecent(int64_t limit) const;
 
     /** @brief Get the total number of stored sessions.
      *  @return Session count. */
-    int64_t count();
+    int64_t count() const;
 
     /** @brief Delete a session by ID.
      *  @param id The session identifier to remove.
@@ -82,15 +83,15 @@ public:
 
     /** @brief Get the session with the highest net WPM.
      *  @return The best session, or std::nullopt if the database is empty. */
-    std::optional<SessionData> bestWpm();
+    std::optional<SessionData> bestWpm() const;
 
     /** @brief Get the session with the highest raw WPM.
      *  @return The best raw session, or std::nullopt if the database is empty. */
-    std::optional<SessionData> bestRawWpm();
+    std::optional<SessionData> bestRawWpm() const;
 
     /** @brief Get the average net WPM across all sessions.
      *  @return Average WPM, or 0.0 if there are no sessions. */
-    double averageWpm();
+    double averageWpm() const;
 
     // ---- Range-based iteration ----
 
@@ -109,6 +110,7 @@ private:
     void invalidateCache();
 
     ::Repository* m_impl;
+    mutable std::mutex m_mutex;
     mutable std::vector<SessionData> m_cache;
     mutable bool m_cacheValid = false;
 };
