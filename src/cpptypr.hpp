@@ -15,5 +15,6 @@
 #include <cpptypr/stats.hpp>
 #include <cpptypr/content.hpp>
 #include <cpptypr/snapshot.hpp>
+#include <cpptypr/version.hpp>
 #include <cpptypr/repository.hpp>
 #include <cpptypr/engine.hpp>

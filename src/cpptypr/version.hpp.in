@@ -1,0 +1,28 @@
+#pragma once
+
+#include <cstdint>
+#include <string_view>
+
+namespace cpptypr {
+
+/// cpptypr version.
+struct Version {
+    static const uint32_t Major = @CPPTYPR_VERSION_MAJOR@;
+    static const uint32_t Minor = @CPPTYPR_VERSION_MINOR@;
+    static const uint32_t Patch = @CPPTYPR_VERSION_PATCH@;
+    static const std::string_view operator()() { return "@CPPTYPR_VERSION@"; }
+};
+
+}
+
+namespace ctypr {
+
+/// ctypr version (re-exported for convenience).
+struct Version {
+    static const uint32_t Major;
+    static const uint32_t Minor;
+    static const uint32_t Patch;
+    static const std::string_view operator()();
+};
+
+}

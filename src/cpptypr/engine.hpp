@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <iosfwd>
 #include <memory>
 #include <string_view>
 
@@ -30,13 +31,17 @@ enum class EngineMode {
  *  @return "strict" or "flow". */
 [[nodiscard]] std::string_view toString(EngineMode mode) noexcept;
 
-namespace detail {
-    /** @brief Parse a case-insensitive string to an EngineMode.
-     *  @param s One of "strict" or "flow".
-     *  @return The matching EngineMode.
-     *  @throws Error if the string does not match any valid mode. */
-    [[nodiscard]] EngineMode parseEngineMode(std::string_view s);
-}
+/** @brief Parse a case-insensitive string to an EngineMode.
+ *  @param s One of "strict" or "flow".
+ *  @return The matching EngineMode.
+ *  @throws Error if the string does not match any valid mode. */
+[[nodiscard]] EngineMode engineModeFromString(std::string_view s);
+
+/** @brief Write an EngineMode to an output stream.
+ *  @param os   The output stream.
+ *  @param mode The engine mode.
+ *  @return The output stream. */
+std::ostream& operator<<(std::ostream& os, EngineMode mode);
 
 /** @brief RAII handle that disconnects an event callback on destruction.
  *
@@ -60,7 +65,7 @@ public:
 
     /** @brief Check whether this handle refers to an active connection.
      *  @return true if the handle is connected to a registered callback. */
-    explicit operator bool() const { return m_cb != nullptr; }
+    [[nodiscard]] explicit operator bool() const noexcept { return m_cb != nullptr; }
 
     CallbackHandle(::Engine* engine, int event, int slotId, void* cb);
 

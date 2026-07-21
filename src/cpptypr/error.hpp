@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd>
 #include <stdexcept>
 #include <string>
 
@@ -34,5 +35,17 @@ public:
 private:
     ErrorCode m_code;
 };
+
+/** @brief Write an ErrorCode to an output stream.
+ *  @param os   The output stream.
+ *  @param code The error code.
+ *  @return The output stream. */
+std::ostream& operator<<(std::ostream& os, ErrorCode code);
+
+/** @brief Write an Error to an output stream.
+ *  @param os  The output stream.
+ *  @param err The error.
+ *  @return The output stream. */
+std::ostream& operator<<(std::ostream& os, const Error& err);
 
 }

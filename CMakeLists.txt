@@ -1,4 +1,9 @@
 cmake_minimum_required(VERSION 3.25)
+
+# ---- Compiler Settings (must be before project() for CMake 3.25+ CXX detection) ----
+set(CMAKE_CXX_STANDARD 23 CACHE STRING "")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 project(cpptypr LANGUAGES C CXX)
 
 # ---- Version ----
@@ -8,6 +13,7 @@ execute_process(
     OUTPUT_VARIABLE GIT_TAG
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+set(GIT_TAG "${GIT_TAG}" CACHE STRING "Latest git tag for versioning")
 
 if(GIT_TAG MATCHES "^v([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
     set(PROJECT_VERSION_MAJOR "${CMAKE_MATCH_1}")
@@ -21,6 +27,16 @@ else()
     set(PROJECT_VERSION "0.1.0")
 endif()
 
+# ---- Version Header ----
+set(CPPTYPR_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(CPPTYPR_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(CPPTYPR_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
+set(CPPTYPR_VERSION "${PROJECT_VERSION}")
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/cpptypr/version.hpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/include/cpptypr/version.hpp
+)
+
 # ---- External Dependencies ----
 include(FetchContent)
 set(saved_build_testing "${BUILD_TESTING}")
@@ -28,13 +44,12 @@ set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     ctypr
     GIT_REPOSITORY https://github.com/AhmedowM/ctypr.git
+    GIT_TAG v1.2.0
 )
 FetchContent_MakeAvailable(ctypr)
 set(BUILD_TESTING "${saved_build_testing}" CACHE BOOL "" FORCE)
 
 # ---- Compiler Settings ----
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # ---- Headers in Build Tree ----

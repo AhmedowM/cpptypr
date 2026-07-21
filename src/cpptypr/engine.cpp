@@ -11,6 +11,7 @@
 #include <cpptypr/logger.hpp>
 #include <cpptypr/detail.hpp>
 
+#include <ostream>
 #include <string>
 #include <utility>
 
@@ -33,19 +34,19 @@ std::string_view toString(EngineMode mode) noexcept {
     return "strict";
 }
 
-namespace detail {
-
-EngineMode parseEngineMode(std::string_view s) {
+EngineMode engineModeFromString(std::string_view s) {
     auto lower = cpptypr::detail::toLower(s);
     if (lower == "strict") return EngineMode::Strict;
     if (lower == "flow")   return EngineMode::Flow;
     throw Error(ErrorCode::InvalidMode);
 }
 
+std::ostream& operator<<(std::ostream& os, EngineMode mode) {
+    return os << toString(mode);
 }
 
 Engine::Engine(std::string_view mode, ContentProvider& provider, uint16_t timeout)
-    : Engine(detail::parseEngineMode(mode), provider, timeout) {}
+    : Engine(engineModeFromString(mode), provider, timeout) {}
 
 Engine::Engine(EngineMode mode, ContentProvider& provider, uint16_t timeout)
     : m_impl([&] {
@@ -109,7 +110,7 @@ SessionStats Engine::stats() const {
 }
 
 void Engine::setMode(EngineMode mode) { CHECK_MOVED(); ::engineSetMode(m_impl, static_cast<::EngineMode>(mode)); }
-void Engine::setMode(std::string_view mode) { CHECK_MOVED(); setMode(detail::parseEngineMode(mode)); }
+void Engine::setMode(std::string_view mode) { CHECK_MOVED(); setMode(engineModeFromString(mode)); }
 
 EngineMode Engine::mode() const { CHECK_MOVED(); return static_cast<EngineMode>(::engineGetMode(m_impl)); }
 

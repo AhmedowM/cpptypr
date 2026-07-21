@@ -3,6 +3,7 @@
 #include <cpptypr/content.hpp>
 #include <cpptypr/detail.hpp>
 
+#include <ostream>
 #include <string>
 
 namespace cpptypr {
@@ -16,9 +17,7 @@ std::string_view toString(ContentMode mode) noexcept {
     return "sentences";
 }
 
-namespace detail {
-
-ContentMode parseContentMode(std::string_view s) {
+ContentMode contentModeFromString(std::string_view s) {
     auto lower = cpptypr::detail::toLower(s);
     if (lower == "sentences")    return ContentMode::Sentences;
     if (lower == "commonwords")  return ContentMode::CommonWords;
@@ -26,6 +25,8 @@ ContentMode parseContentMode(std::string_view s) {
     throw Error(ErrorCode::InvalidMode);
 }
 
+std::ostream& operator<<(std::ostream& os, ContentMode mode) {
+    return os << toString(mode);
 }
 
 ContentProvider ContentProvider::fromString(std::string_view text) {
@@ -60,7 +61,7 @@ ContentProvider& ContentProvider::operator=(ContentProvider&& other) noexcept {
 }
 
 void ContentProvider::setMode(ContentMode mode) { CHECK_MOVED(); ::contentProviderSetMode(m_impl, static_cast<::ContentMode>(mode)); }
-void ContentProvider::setMode(std::string_view mode) { CHECK_MOVED(); setMode(detail::parseContentMode(mode)); }
+void ContentProvider::setMode(std::string_view mode) { CHECK_MOVED(); setMode(contentModeFromString(mode)); }
 
 void ContentProvider::setContentLimit(size_t limit) { CHECK_MOVED(); ::contentProviderSetContentLimit(m_impl, limit); }
 

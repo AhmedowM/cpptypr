@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd>
 #include <string>
 #include <string_view>
 
@@ -29,13 +30,17 @@ enum class ContentMode {
  *  @return "sentences", "commonwords", or "randomwords". */
 [[nodiscard]] std::string_view toString(ContentMode mode) noexcept;
 
-namespace detail {
-    /** @brief Parse a case-insensitive string to a ContentMode.
-     *  @param s One of "sentences", "commonwords", or "randomwords".
-     *  @return The matching ContentMode.
-     *  @throws Error if the string does not match any valid mode. */
-    [[nodiscard]] ContentMode parseContentMode(std::string_view s);
-}
+/** @brief Parse a case-insensitive string to a ContentMode.
+ *  @param s One of "sentences", "commonwords", or "randomwords".
+ *  @return The matching ContentMode.
+ *  @throws Error if the string does not match any valid mode. */
+[[nodiscard]] ContentMode contentModeFromString(std::string_view s);
+
+/** @brief Write a ContentMode to an output stream.
+ *  @param os  The output stream.
+ *  @param mode The content mode.
+ *  @return The output stream. */
+std::ostream& operator<<(std::ostream& os, ContentMode mode);
 
 /** @brief RAII wrapper that provides practice content to an Engine.
  *
@@ -84,7 +89,7 @@ public:
 
     /** @brief Retrieve the next chunk of content.
      *  @return The next ContentChunk, or an empty chunk when exhausted. */
-    ContentChunk getNext();
+    [[nodiscard]] ContentChunk getNext();
 
     /** @brief Reset the provider, allowing content to be replayed from the beginning. */
     void reset();

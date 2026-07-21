@@ -6,9 +6,20 @@
 #include <chrono>
 #include <cstring>
 #include <cstdlib>
+#include <ostream>
 #include <string>
 
 namespace cpptypr {
+
+std::ostream& operator<<(std::ostream& os, const SessionData& data) {
+    return os << "SessionData{id=" << data.id
+              << ", timestamp=" << data.timestamp
+              << ", mode=" << data.mode
+              << ", chars=" << data.correctChars << "/" << data.totalChars
+              << ", wpm=" << data.wpm << ", wpmRaw=" << data.wpmRaw
+              << ", accuracy=" << data.accuracy
+              << "%, duration=" << data.durationMs.count() << "ms}";
+}
 
 Repository::Repository(std::string_view dbPath) : m_impl(::repositoryCreate(std::string(dbPath).c_str())) {}
 

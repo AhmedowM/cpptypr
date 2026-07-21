@@ -30,6 +30,12 @@ struct SessionData {
     double accuracy;       /**< Accuracy percentage (0.0–100.0). */
 };
 
+/** @brief Write SessionData to an output stream.
+ *  @param os   The output stream.
+ *  @param data The session data.
+ *  @return The output stream. */
+std::ostream& operator<<(std::ostream& os, const SessionData& data);
+
 /** @brief RAII wrapper that persists session data to a SQLite database.
  *
  * Provides CRUD operations for typing sessions and convenience queries
@@ -76,7 +82,7 @@ public:
     /** @brief Delete a session by ID.
      *  @param id The session identifier to remove.
      *  @return true if a session was deleted, false if not found. */
-    bool deleteSession(int64_t id);
+    [[nodiscard]] bool deleteSession(int64_t id);
 
     /** @brief Remove all sessions from the database. */
     void clearAll();

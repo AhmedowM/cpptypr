@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iosfwd>
 #include <string_view>
 
 #include <cpptypr/error.hpp>
@@ -26,13 +27,17 @@ enum class LogLevel {
  *  @return "debug", "info", "warning", "error", or "none". */
 [[nodiscard]] std::string_view toString(LogLevel level) noexcept;
 
-namespace detail {
-    /** @brief Parse a case-insensitive string to a LogLevel.
-     *  @param s One of "debug", "info", "warning", "error", or "none".
-     *  @return The matching LogLevel.
-     *  @throws Error if the string does not match any valid level. */
-    [[nodiscard]] LogLevel parseLogLevel(std::string_view s);
-}
+/** @brief Parse a case-insensitive string to a LogLevel.
+ *  @param s One of "debug", "info", "warning", "error", or "none".
+ *  @return The matching LogLevel.
+ *  @throws Error if the string does not match any valid level. */
+[[nodiscard]] LogLevel logLevelFromString(std::string_view s);
+
+/** @brief Write a LogLevel to an output stream.
+ *  @param os    The output stream.
+ *  @param level The log level.
+ *  @return The output stream. */
+std::ostream& operator<<(std::ostream& os, LogLevel level);
 
 /** @brief RAII wrapper over the C logger.
  *
@@ -79,7 +84,7 @@ public:
     /** @brief Add a file output sink.
      *  @param filepath Path to the log file.
      *  @return true if the file was opened successfully, false otherwise. */
-    bool addFile(std::string_view filepath);
+    [[nodiscard]] bool addFile(std::string_view filepath);
 
     /** @brief Log a message at the given severity.
      *  @param level   Severity of the message.

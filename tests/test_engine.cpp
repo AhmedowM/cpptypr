@@ -1,5 +1,7 @@
 #include <cpptypr.hpp>
 
+#include <core/version.h>
+
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -31,7 +33,7 @@ static int test_count = 0;
 } while(0)
 
 static cpptypr::ContentProvider sharedContent = cpptypr::ContentProvider::fromString(
-    "The quick brown fox jumps over the lazy dog.");
+    "The end!!!");
 
 static cpptypr::Engine makeEngine(cpptypr::EngineMode mode, uint16_t timeout = 0) {
     sharedContent.reset();
@@ -193,7 +195,7 @@ static void test_flow_backspace_correct() {
     ASSERT(stats.correctKeystrokes == 2, "correctKeystrokes should be 2");
     e.backspacePress();
     stats = e.stats();
-    ASSERT(stats.totalKeystrokes == 2, "totalKeystrokes should still be 2");
+    ASSERT(stats.totalKeystrokes == 1, "totalKeystrokes should be 1 after undoing a keystroke");
     ASSERT(stats.correctKeystrokes == 1, "correctKeystrokes should be 1 after undoing correct char");
     PASS();
 }
@@ -205,14 +207,14 @@ static void test_flow_backspace_incorrect() {
     e.keyPress('X');
     auto stats = e.stats();
     ASSERT(stats.totalKeystrokes == 1, "totalKeystrokes should be 1");
-    ASSERT(stats.correctKeystrokes == 0, "correctKeystrokes should be 0");
+    ASSERT(stats.incorrectKeystrokes == 1, "incorrectKeystrokes should be 1");
     e.backspacePress();
     stats = e.stats();
-    ASSERT(stats.totalKeystrokes == 1, "totalKeystrokes should still be 1");
-    ASSERT(stats.correctKeystrokes == 0, "correctKeystrokes should still be 0");
+    ASSERT(stats.totalKeystrokes == 0, "totalKeystrokes should be 0 after undoing the only keystroke");
+    ASSERT(stats.incorrectKeystrokes == 0, "incorrectKeystrokes should be 0 after undoing incorrect key");
     e.keyPress('T');
     stats = e.stats();
-    ASSERT(stats.totalKeystrokes == 2, "totalKeystrokes should be 2");
+    ASSERT(stats.totalKeystrokes == 1, "totalKeystrokes should be 1");
     ASSERT(stats.correctKeystrokes == 1, "correctKeystrokes should be 1");
     PASS();
 }
@@ -226,8 +228,8 @@ static void test_session_complete_strict() {
     auto h1 = e.onFinished([&] { finished = true; });
     auto h2 = e.onStopped([&] { stopped = true; });
     e.start();
-    const char* text = "The quick brown fox jumps over the lazy dog.";
-    for (const char* p = text; *p; p++) { e.keyPress(*p); }
+    std::string_view text = "The end!!!";
+    for (char c : text) { e.keyPress(c); }
     ASSERT(!e.isIdle(), "should not be idle (has finish cause)");
     ASSERT(e.isCompleted(), "should be completed");
     ASSERT(finished, "Finished callback should have fired");
@@ -242,8 +244,8 @@ static void test_session_complete_flow() {
     auto h1 = e.onFinished([&] { finished = true; });
     auto h2 = e.onStopped([&] { stopped = true; });
     e.start();
-    const char* text = "The quick brown fox jumps over the lazy dog.";
-    for (const char* p = text; *p; p++) { e.keyPress(*p); }
+    std::string_view text = "The end!!!";
+    for (char c : text) { e.keyPress(c); }
     ASSERT(!e.isIdle(), "should not be idle (has finish cause)");
     ASSERT(e.isCompleted(), "should be completed");
     ASSERT(finished, "Finished callback should have fired");
@@ -537,14 +539,14 @@ static void test_snapshot_after_completion() {
     TEST("Snapshot: after completion cursor equals length");
     auto e = makeEngine(cpptypr::EngineMode::Strict);
     e.start();
-    const char* text = "The quick brown fox jumps over the lazy dog.";
-    for (const char* p = text; *p; p++) { e.keyPress(*p); }
+    std::string_view text = "The end!!!";
+    for (char c : text) { e.keyPress(c); }
     auto snap = e.getSnapshot();
     ASSERT(snap.state() == cpptypr::EngineState::Idle, "state should be Idle after completion");
     ASSERT(snap.stopCause() == cpptypr::StopCause::Finished, "stopCause should be Finished");
     ASSERT(snap.cursorIndex() == snap.length(), "cursor should equal length");
     ASSERT(snap.expectedChar() == '\0', "expectedChar should be null after completion");
-    ASSERT(snap.stats().correctKeystrokes == 44, "all 44 keystrokes should be correct");
+    ASSERT(snap.stats().correctKeystrokes == 10, "all 10 keystrokes should be correct");
     PASS();
 }
 
@@ -593,15 +595,39 @@ static void test_auto_save_session() {
     cpptypr::Engine e(cpptypr::EngineMode::Flow, sharedContent, 0);
     e.setAutoSave(repo, true);
     e.start();
-    const char* text = "The quick brown fox jumps over the lazy dog.";
-    for (const char* p = text; *p; p++) { e.keyPress(*p); }
+    std::string_view text = "The end!!!";
+    for (char c : text) { e.keyPress(c); }
     ASSERT(e.isCompleted(), "should be completed");
     auto all = repo.getAll();
     ASSERT(all.size() == 1, "should have 1 saved session");
-    ASSERT(all[0].totalChars == 44, "totalChars should be 44");
-    ASSERT(all[0].correctChars == 44, "correctChars should be 44");
+    ASSERT(all[0].totalChars == 10, "totalChars should be 10");
+    ASSERT(all[0].correctChars == 10, "correctChars should be 10");
     ASSERT(fabs(all[0].accuracy - 100.0) < 0.001, "accuracy should be ~100.0");
     remove("test_autosave.db");
+    PASS();
+}
+
+// ===== Version =====
+
+static void test_cpptypr_version() {
+    TEST("Version: cpptypr::Version exposes static Major, Minor, Patch, and operator()");
+    ASSERT(cpptypr::Version::Major >= 0, "Major should be non-negative");
+    ASSERT(cpptypr::Version::Minor >= 0, "Minor should be non-negative");
+    ASSERT(cpptypr::Version::Patch >= 0, "Patch should be non-negative");
+    auto s = cpptypr::Version()();
+    ASSERT(!s.empty(), "version string should not be empty");
+    ASSERT(s.find('.') != std::string_view::npos, "version string should contain dots");
+    PASS();
+}
+
+static void test_ctypr_version() {
+    TEST("Version: ctypr version matches macros from C header");
+    ASSERT(CTYPR_VERSION_MAJOR >= 1, "ctypr MAJOR should be >= 1");
+    ASSERT(CTYPR_VERSION_MINOR >= 0, "ctypr MINOR should be >= 0");
+    ASSERT(CTYPR_VERSION_PATCH >= 0, "ctypr PATCH should be >= 0");
+    std::string_view v(CTYPR_VERSION_STRING);
+    ASSERT(!v.empty(), "ctypr version string should not be empty");
+    ASSERT(v.find('.') != std::string_view::npos, "ctypr version string should contain dots");
     PASS();
 }
 
@@ -648,6 +674,9 @@ int main() {
     test_stop_cause_to_string();
 
     test_auto_save_session();
+
+    test_cpptypr_version();
+    test_ctypr_version();
 
     fprintf(stderr, "\n=== Results: %d passed, %d failed, %d total ===\n",
            tests_passed, tests_failed, test_count);

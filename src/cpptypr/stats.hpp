@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <cstdint>
+#include <ostream>
 
 namespace cpptypr {
 
@@ -15,5 +16,19 @@ struct SessionStats {
     double wpm;                  /**< Net words-per-minute (penalises mistakes). */
     double wpmRaw;               /**< Raw words-per-minute (no penalty). */
 };
+
+/** @brief Write SessionStats to an output stream.
+ *  @param os    The output stream.
+ *  @param stats The session statistics.
+ *  @return The output stream. */
+inline std::ostream& operator<<(std::ostream& os, const SessionStats& stats) {
+    return os << "SessionStats{correct=" << stats.correctKeystrokes
+              << ", incorrect=" << stats.incorrectKeystrokes
+              << ", total=" << stats.totalKeystrokes
+              << ", accuracy=" << stats.accuracy
+              << "%, wpm=" << stats.wpm
+              << ", wpmRaw=" << stats.wpmRaw
+              << ", duration=" << stats.durationMs.count() << "ms}";
+}
 
 }

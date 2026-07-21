@@ -3,6 +3,8 @@
 #include <cpptypr/logger.hpp>
 #include <cpptypr/detail.hpp>
 
+#include <ostream>
+
 namespace cpptypr {
 
 std::string_view toString(LogLevel level) noexcept {
@@ -16,9 +18,7 @@ std::string_view toString(LogLevel level) noexcept {
     return "debug";
 }
 
-namespace detail {
-
-LogLevel parseLogLevel(std::string_view s) {
+LogLevel logLevelFromString(std::string_view s) {
     auto lower = cpptypr::detail::toLower(s);
     if (lower == "debug")   return LogLevel::Debug;
     if (lower == "info")    return LogLevel::Info;
@@ -28,13 +28,15 @@ LogLevel parseLogLevel(std::string_view s) {
     throw Error(ErrorCode::Config);
 }
 
+std::ostream& operator<<(std::ostream& os, LogLevel level) {
+    return os << toString(level);
 }
 
 Logger::Logger(LogLevel level, bool enableStdout)
     : m_impl(::loggerCreate(static_cast<::LogLevel>(level), enableStdout)) {}
 
 Logger::Logger(std::string_view level, bool enableStdout)
-    : Logger(detail::parseLogLevel(level), enableStdout) {}
+    : Logger(logLevelFromString(level), enableStdout) {}
 
 Logger::~Logger() { if (m_impl) { ::loggerDestroy(m_impl); } }
 
@@ -50,7 +52,7 @@ Logger& Logger::operator=(Logger&& other) noexcept {
 }
 
 void Logger::setLevel(LogLevel level) { CHECK_MOVED(); ::loggerSetLevel(m_impl, static_cast<::LogLevel>(level)); }
-void Logger::setLevel(std::string_view level) { CHECK_MOVED(); setLevel(detail::parseLogLevel(level)); }
+void Logger::setLevel(std::string_view level) { CHECK_MOVED(); setLevel(logLevelFromString(level)); }
 
 LogLevel Logger::level() const { CHECK_MOVED(); return static_cast<LogLevel>(::loggerGetLevel(m_impl)); }
 
@@ -68,7 +70,7 @@ void Logger::log(LogLevel level, std::string_view message) {
 
 void Logger::log(std::string_view level, std::string_view message) {
     CHECK_MOVED();
-    log(detail::parseLogLevel(level), message);
+    log(logLevelFromString(level), message);
 }
 
 }
