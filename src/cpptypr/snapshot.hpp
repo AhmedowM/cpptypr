@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stddef.h>
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
@@ -30,6 +31,7 @@ enum class StopCause {
 [[nodiscard]] std::string_view toString(StopCause cause) noexcept;
 
 class Snapshot {
+    friend class Engine;
 public:
     [[nodiscard]] std::string_view text() const noexcept;
     [[nodiscard]] size_t length() const noexcept;
@@ -41,7 +43,6 @@ public:
     [[nodiscard]] StopCause stopCause() const noexcept;
 
 private:
-    friend class Engine;
     explicit Snapshot(const ::EngineSnapshot& snap);
     ::EngineSnapshot m_snap;
 };
