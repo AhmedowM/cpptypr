@@ -141,6 +141,10 @@ public:
     /** @brief Signal a backspace (undo the last keystroke if allowed by mode). */
     void backspacePress();
 
+    /** @brief Manually update the engine's internal timer and check for timeout.
+     *  Useful for driving the engine in game loops without keystrokes. */
+    void tick();
+
     // ---- State queries ----
 
     /** @brief Check if the engine is currently running.

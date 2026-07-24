@@ -44,7 +44,7 @@ set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
     ctypr
     GIT_REPOSITORY https://github.com/AhmedowM/ctypr.git
-    GIT_TAG v1.2.0
+    GIT_TAG v1.3.0
 )
 FetchContent_MakeAvailable(ctypr)
 set(BUILD_TESTING "${saved_build_testing}" CACHE BOOL "" FORCE)

@@ -78,6 +78,7 @@ void Engine::reset() { CHECK_MOVED(); ::engineReset(m_impl.get()); }
 
 void Engine::keyPress(char key) { CHECK_MOVED(); ::engineKeyPress(m_impl.get(), key); }
 void Engine::backspacePress() { CHECK_MOVED(); ::engineBackspacePress(m_impl.get()); }
+void Engine::tick() { CHECK_MOVED(); ::engineTick(m_impl.get()); }
 
 bool Engine::isRunning() const { CHECK_MOVED(); return ::engineIsRunning(m_impl.get()); }
 bool Engine::isPaused() const { CHECK_MOVED(); return ::engineIsPaused(m_impl.get()); }

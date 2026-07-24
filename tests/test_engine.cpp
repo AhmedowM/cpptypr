@@ -8,6 +8,19 @@
 #include <cstring>
 #include <thread>
 
+#if defined(_WIN32) && defined(_DEBUG)
+#include <crtdbg.h>
+
+void suppress_msvc_popups() {
+    // Direct CRT assertion failure output to stderr instead of a GUI message box
+    _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+    
+    _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+}
+#endif
+
 static int tests_passed = 0;
 static int tests_failed = 0;
 static int test_count = 0;
@@ -498,6 +511,19 @@ static void test_timeout_pause_does_not_accumulate() {
     PASS();
 }
 
+static void test_tick() {
+    TEST("Tick: updates timer and can trigger timeout");
+    auto e = makeEngine(cpptypr::EngineMode::Strict, 1);
+    e.start();
+    ASSERT(e.isRunning(), "should be running");
+    e.tick();
+    ASSERT(e.isRunning(), "tick before timeout should not stop");
+    std::this_thread::sleep_for(std::chrono::milliseconds(1100));
+    e.tick();
+    ASSERT(e.isTimedOut(), "tick after timeout should detect it");
+    PASS();
+}
+
 // ===== Snapshot =====
 
 static void test_snapshot_before_start() {
@@ -634,6 +660,10 @@ static void test_ctypr_version() {
 int main() {
     printf("=== cpptypr Engine Test Suite ===\n\n");
 
+#if defined(_WIN32) && defined(_DEBUG)
+    suppress_msvc_popups();
+#endif
+
     test_create_destroy();
     test_mode();
     test_timeout();
@@ -664,6 +694,7 @@ int main() {
     test_timeout_zero_disabled();
     test_timeout_triggers();
     test_timeout_pause_does_not_accumulate();
+    test_tick();
 
     test_snapshot_before_start();
     test_snapshot_after_start();
