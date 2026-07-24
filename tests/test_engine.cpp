@@ -10,6 +10,7 @@
 
 #if defined(_WIN32) && defined(_DEBUG)
 #include <crtdbg.h>
+#include <stdlib.h>
 
 void suppress_msvc_popups() {
     // Direct CRT assertion failure output to stderr instead of a GUI message box
@@ -18,6 +19,16 @@ void suppress_msvc_popups() {
     
     _CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
     _CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDERR);
+
+    _CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+    _CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDERR);
+
+    // Disable CRT error dialogs (assert, abort, invalid parameter)
+    _set_error_mode(_OUT_TO_STDERR);
+    _set_abort_behavior(0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
+
+    // Suppress invalid parameter handler dialog (e.g. NULL pointer checks in Debug CRT)
+    _set_invalid_parameter_handler([](const wchar_t*, const wchar_t*, const wchar_t*, unsigned int, uintptr_t) {});
 }
 #endif
 
@@ -45,10 +56,13 @@ static int test_count = 0;
     if (!(cond)) { FAIL(msg); return; } \
 } while(0)
 
-static cpptypr::ContentProvider sharedContent = cpptypr::ContentProvider::fromString(
-    "The end!!!");
+static cpptypr::ContentProvider& getSharedContent() {
+    static cpptypr::ContentProvider p = cpptypr::ContentProvider::fromString("The end!!!");
+    return p;
+}
 
 static cpptypr::Engine makeEngine(cpptypr::EngineMode mode, uint16_t timeout = 0) {
+    auto& sharedContent = getSharedContent();
     sharedContent.reset();
     return cpptypr::Engine(mode, sharedContent, timeout);
 }
@@ -617,6 +631,7 @@ static void test_stop_cause_to_string() {
 static void test_auto_save_session() {
     TEST("Auto-save: saves session on completion");
     cpptypr::Repository repo("test_autosave.db");
+    auto& sharedContent = getSharedContent();
     sharedContent.reset();
     cpptypr::Engine e(cpptypr::EngineMode::Flow, sharedContent, 0);
     e.setAutoSave(repo, true);
@@ -658,59 +673,71 @@ static void test_ctypr_version() {
 }
 
 int main() {
-    printf("=== cpptypr Engine Test Suite ===\n\n");
-
 #if defined(_WIN32) && defined(_DEBUG)
+    setvbuf(stdout, NULL, _IONBF, 0);
     suppress_msvc_popups();
 #endif
 
-    test_create_destroy();
-    test_mode();
-    test_timeout();
-    test_state_transitions();
-    test_pause_resume();
-    test_reset();
-    test_strict_correct_key();
-    test_strict_incorrect_key();
-    test_strict_backspace_disabled();
-    test_flow_correct_key();
-    test_flow_incorrect_key_advances();
-    test_flow_backspace_correct();
-    test_flow_backspace_incorrect();
-    test_session_complete_strict();
-    test_session_complete_flow();
-    test_callbacks();
-    test_multiple_callbacks();
-    test_signal_disconnect();
-    test_callback_raii();
-    test_callback_move();
-    test_stats_accuracy();
-    test_stats_before_start();
-    test_error_already_running();
-    test_error_not_running();
-    test_ctypr_error();
-    test_pause_error_path();
-    test_resume_error_path();
-    test_timeout_zero_disabled();
-    test_timeout_triggers();
-    test_timeout_pause_does_not_accumulate();
-    test_tick();
+    try {
+        printf("=== cpptypr Engine Test Suite ===\n\n");
 
-    test_snapshot_before_start();
-    test_snapshot_after_start();
-    test_snapshot_incorrect_flags();
-    test_snapshot_after_completion();
-    test_snapshot_flow_backspace();
-    test_engine_state_to_string();
-    test_stop_cause_to_string();
+        test_create_destroy();
+        test_mode();
+        test_timeout();
+        test_state_transitions();
+        test_pause_resume();
+        test_reset();
+        test_strict_correct_key();
+        test_strict_incorrect_key();
+        test_strict_backspace_disabled();
+        test_flow_correct_key();
+        test_flow_incorrect_key_advances();
+        test_flow_backspace_correct();
+        test_flow_backspace_incorrect();
+        test_session_complete_strict();
+        test_session_complete_flow();
+        test_callbacks();
+        test_multiple_callbacks();
+        test_signal_disconnect();
+        test_callback_raii();
+        test_callback_move();
+        test_stats_accuracy();
+        test_stats_before_start();
+        test_error_already_running();
+        test_error_not_running();
+        test_ctypr_error();
+        test_pause_error_path();
+        test_resume_error_path();
+        test_timeout_zero_disabled();
+        test_timeout_triggers();
+        test_timeout_pause_does_not_accumulate();
+        test_tick();
 
-    test_auto_save_session();
+        test_snapshot_before_start();
+        test_snapshot_after_start();
+        test_snapshot_incorrect_flags();
+        test_snapshot_after_completion();
+        test_snapshot_flow_backspace();
+        test_engine_state_to_string();
+        test_stop_cause_to_string();
 
-    test_cpptypr_version();
-    test_ctypr_version();
+        test_auto_save_session();
 
-    fprintf(stderr, "\n=== Results: %d passed, %d failed, %d total ===\n",
-           tests_passed, tests_failed, test_count);
+        test_cpptypr_version();
+        test_ctypr_version();
+
+        fprintf(stderr, "\n=== Results: %d passed, %d failed, %d total ===\n",
+               tests_passed, tests_failed, test_count);
+    } catch (const std::exception& e) {
+        fprintf(stderr, "\nFATAL: Unhandled std::exception: %s\n", e.what());
+        return 1;
+    } catch (...) {
+        fprintf(stderr, "\nFATAL: Unhandled unknown exception\n");
+        return 1;
+    }
+
+    // Explicitly reset sharedContent to destroy it while logger is still alive
+    getSharedContent().reset();
 
     remove("test_autosave.db");
 

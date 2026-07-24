@@ -1,5 +1,6 @@
 .cache
-build
+.vscode
+build*
 Testing
 
 plan.md

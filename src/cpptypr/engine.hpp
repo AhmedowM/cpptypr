@@ -290,9 +290,9 @@ public:
     [[nodiscard]] CallbackHandle onError(std::function<void()> cb);
 
 private:
-    std::unique_ptr<::Engine, EngineDeleter> m_impl;
     std::unique_ptr<class Logger> m_defaultLogger;
     class Logger* m_logger;
+    std::unique_ptr<::Engine, EngineDeleter> m_impl;
 };
 
 }
