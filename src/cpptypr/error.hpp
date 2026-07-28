@@ -9,10 +9,10 @@ namespace cpptypr {
 /** @brief Error codes returned or thrown by cpptypr operations. */
 enum class ErrorCode {
     None,            /**< No error. */
-    InvalidMode,     /**< An invalid engine mode was provided. */
-    InvalidTimeout,  /**< An invalid timeout value was provided. */
-    AlreadyRunning,  /**< Operation failed because the engine is already running. */
-    NotRunning,      /**< Operation failed because the engine is not running. */
+    InvalidMode,     /**< Invalid engine mode. */
+    InvalidTimeout,  /**< Invalid timeout value. */
+    AlreadyRunning,  /**< Engine is already running. */
+    NotRunning,      /**< Engine is not running. */
     Config,          /**< Engine configuration error. */
     Content,         /**< Content provider error. */
     State,           /**< Invalid state transition. */

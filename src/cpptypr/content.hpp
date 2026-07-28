@@ -46,11 +46,11 @@ std::ostream& operator<<(std::ostream& os, ContentMode mode);
 
 /** @brief RAII wrapper that provides practice content to an Engine.
  *
- * Use the static factory methods (fromString, fromFile, etc.) to create
- * a provider backed by a specific content source. The underlying C
- * ContentProvider is owned by this wrapper.
+ *  Use the static factory methods (fromString, fromFile, etc.) to create
+ *  a provider backed by a specific content source. The underlying C
+ *  ContentProvider is owned by this wrapper.
  *
- * @note ContentProvider is non-copyable but movable. */
+ *  @note ContentProvider is non-copyable but movable. */
 class ContentProvider {
 public:
     /** @brief Create a provider that reads from a text string.
@@ -88,6 +88,16 @@ public:
     /** @brief Limit the total amount of content the provider will return.
      *  @param limit Maximum number of content units. */
     void setContentLimit(size_t limit);
+
+    /** @brief Filter sentences by difficulty (database provider only).
+     *  @param difficulty One of "Easy", "Normal", "Hard", "Expert", or empty to clear. */
+    void setDifficultyFilter(std::string_view difficulty);
+
+    /** @brief Filter words by length range (database provider only).
+     *  @param minLen Minimum length (inclusive). 0 = no minimum.
+     *  @param maxLen Maximum length (inclusive). 0 = no maximum.
+     *  Pass 0 for both to clear the filter. */
+    void setWordLengthRange(size_t minLen, size_t maxLen);
 
     /** @brief Retrieve the next chunk of content.
      *  @return The next ContentChunk, or an empty chunk when exhausted. */

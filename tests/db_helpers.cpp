@@ -19,20 +19,18 @@ void createTestWordDb() {
     remove(TEST_DB);
     sqlite3* db = nullptr;
     if (sqlite3_open(TEST_DB, &db) != SQLITE_OK) return;
-    execSql(db, "CREATE TABLE IF NOT EXISTS common_words ("
+    execSql(db, "CREATE TABLE IF NOT EXISTS words ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, word TEXT NOT NULL UNIQUE,"
-        "word_length INTEGER NOT NULL, frequency_rank INTEGER NOT NULL)");
-    execSql(db, "CREATE TABLE IF NOT EXISTS random_words ("
-        "id INTEGER PRIMARY KEY AUTOINCREMENT, word TEXT NOT NULL UNIQUE,"
-        "word_length INTEGER NOT NULL, difficulty_rating REAL DEFAULT 1.0)");
-    execSql(db, "INSERT INTO common_words (word, word_length, frequency_rank) VALUES ('the', 3, 1)");
-    execSql(db, "INSERT INTO common_words (word, word_length, frequency_rank) VALUES ('quick', 5, 2)");
-    execSql(db, "INSERT INTO common_words (word, word_length, frequency_rank) VALUES ('brown', 5, 3)");
-    execSql(db, "INSERT INTO common_words (word, word_length, frequency_rank) VALUES ('fox', 3, 4)");
-    execSql(db, "INSERT INTO random_words (word, word_length) VALUES ('jumps', 5)");
-    execSql(db, "INSERT INTO random_words (word, word_length) VALUES ('over', 4)");
-    execSql(db, "INSERT INTO random_words (word, word_length) VALUES ('lazy', 4)");
-    execSql(db, "INSERT INTO random_words (word, word_length) VALUES ('dog', 3)");
+        "word_length INTEGER NOT NULL, frequency_rank INTEGER NOT NULL,"
+        "difficulty_rating REAL DEFAULT 1.0)");
+    execSql(db, "INSERT INTO words (word, word_length, frequency_rank) VALUES ('the', 3, 1)");
+    execSql(db, "INSERT INTO words (word, word_length, frequency_rank) VALUES ('quick', 5, 2)");
+    execSql(db, "INSERT INTO words (word, word_length, frequency_rank) VALUES ('brown', 5, 3)");
+    execSql(db, "INSERT INTO words (word, word_length, frequency_rank) VALUES ('fox', 3, 4)");
+    execSql(db, "INSERT INTO words (word, word_length, frequency_rank) VALUES ('jumps', 5, 5)");
+    execSql(db, "INSERT INTO words (word, word_length, frequency_rank) VALUES ('over', 4, 6)");
+    execSql(db, "INSERT INTO words (word, word_length, frequency_rank) VALUES ('lazy', 4, 7)");
+    execSql(db, "INSERT INTO words (word, word_length, frequency_rank) VALUES ('dog', 3, 8)");
     sqlite3_close(db);
 }
 
@@ -58,9 +56,10 @@ void createEmptyWordDb() {
     remove(path);
     sqlite3* db = nullptr;
     if (sqlite3_open(path, &db) != SQLITE_OK) return;
-    execSql(db, "CREATE TABLE common_words ("
+    execSql(db, "CREATE TABLE words ("
         "id INTEGER PRIMARY KEY AUTOINCREMENT, word TEXT NOT NULL UNIQUE,"
-        "word_length INTEGER NOT NULL, frequency_rank INTEGER NOT NULL)");
+        "word_length INTEGER NOT NULL, frequency_rank INTEGER NOT NULL,"
+        "difficulty_rating REAL DEFAULT 1.0)");
     sqlite3_close(db);
 }
 

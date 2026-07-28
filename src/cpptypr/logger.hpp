@@ -43,9 +43,9 @@ std::ostream& operator<<(std::ostream& os, LogLevel level);
 
 /** @brief RAII wrapper over the C logger.
  *
- * Manages a ::Logger instance with automatic cleanup on destruction.
- * Owns the underlying C logger — when the Logger object is destroyed,
- * the C logger is freed. */
+ *  Manages a ::Logger instance with automatic cleanup on destruction.
+ *  Owns the underlying C logger — when the Logger object is destroyed,
+ *  the C logger is freed. */
 class Logger {
 public:
     /** @brief Construct a logger with the given severity level.

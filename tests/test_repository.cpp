@@ -54,6 +54,46 @@ static cpptypr::SessionData makeSession(const char* mode = "strict") {
     return s;
 }
 
+// ===== GetSessionsByMode =====
+
+static void test_get_sessions_by_mode() {
+    TEST("Repository: getSessionsByMode filters by mode");
+    cleanupTestDb();
+    {
+        cpptypr::Repository repo(TEST_DB_PATH);
+        auto strict = makeSession("strict");
+        strict.wpm = 60.0;
+        repo.saveSession(strict);
+        auto flow = makeSession("flow");
+        flow.wpm = 80.0;
+        repo.saveSession(flow);
+        repo.saveSession(makeSession("strict"));
+
+        auto strictSessions = repo.getSessionsByMode("strict");
+        ASSERT(strictSessions.size() == 2, "should find 2 strict sessions");
+        ASSERT(fabs(strictSessions[0].wpm - 78.5) < 0.001, "most recent strict session should be first");
+
+        auto flowSessions = repo.getSessionsByMode("flow");
+        ASSERT(flowSessions.size() == 1, "should find 1 flow session");
+        ASSERT(fabs(flowSessions[0].wpm - 80.0) < 0.001, "flow session data should be valid");
+    }
+    cleanupTestDb();
+    PASS();
+}
+
+static void test_get_sessions_by_mode_empty() {
+    TEST("Repository: getSessionsByMode returns empty for nonexistent mode");
+    cleanupTestDb();
+    {
+        cpptypr::Repository repo(TEST_DB_PATH);
+        repo.saveSession(makeSession("strict"));
+        auto result = repo.getSessionsByMode("expert");
+        ASSERT(result.empty(), "should return empty vector for unknown mode");
+    }
+    cleanupTestDb();
+    PASS();
+}
+
 // ===== Save & Get =====
 
 static void test_save_and_get_session() {
@@ -286,6 +326,8 @@ static void test_range_iteration() {
 int main() {
     printf("=== cpptypr Repository Test Suite ===\n\n");
 
+    test_get_sessions_by_mode();
+    test_get_sessions_by_mode_empty();
     test_save_and_get_session();
     test_get_session_nonexistent();
     test_get_all_sessions();

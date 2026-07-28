@@ -217,6 +217,62 @@ static void test_provider_move() {
     PASS();
 }
 
+// ===== Content filter APIs =====
+
+static void test_difficulty_filter() {
+    TEST("ContentProvider: setDifficultyFilter with valid difficulty");
+    createTestSentenceDb();
+    auto cp = cpptypr::ContentProvider::fromDatabase("test_content_sentences.db");
+    cp.setMode(cpptypr::ContentMode::Sentences);
+    cp.setContentLimit(10);
+    cp.setDifficultyFilter("Normal");
+    auto chunk = cp.getNext();
+    ASSERT(!chunk.text.empty(), "should have content with Normal filter");
+    cleanupTestDb("test_content_sentences.db");
+    PASS();
+}
+
+static void test_difficulty_filter_clear() {
+    TEST("ContentProvider: setDifficultyFilter empty clears filter");
+    createTestSentenceDb();
+    auto cp = cpptypr::ContentProvider::fromDatabase("test_content_sentences.db");
+    cp.setMode(cpptypr::ContentMode::Sentences);
+    cp.setContentLimit(10);
+    cp.setDifficultyFilter("Normal");
+    cp.setDifficultyFilter("");
+    auto chunk = cp.getNext();
+    ASSERT(!chunk.text.empty(), "should have content after clearing filter");
+    cleanupTestDb("test_content_sentences.db");
+    PASS();
+}
+
+static void test_word_length_range() {
+    TEST("ContentProvider: setWordLengthRange with valid range");
+    createTestWordDb();
+    auto cp = cpptypr::ContentProvider::fromDatabase("test_content_words.db");
+    cp.setMode(cpptypr::ContentMode::CommonWords);
+    cp.setContentLimit(10);
+    cp.setWordLengthRange(4, 8);
+    auto chunk = cp.getNext();
+    ASSERT(!chunk.text.empty(), "should have content with word length range");
+    cleanupTestDb("test_content_words.db");
+    PASS();
+}
+
+static void test_word_length_range_clear() {
+    TEST("ContentProvider: setWordLengthRange 0,0 clears filter");
+    createTestWordDb();
+    auto cp = cpptypr::ContentProvider::fromDatabase("test_content_words.db");
+    cp.setMode(cpptypr::ContentMode::CommonWords);
+    cp.setContentLimit(10);
+    cp.setWordLengthRange(4, 8);
+    cp.setWordLengthRange(0, 0);
+    auto chunk = cp.getNext();
+    ASSERT(!chunk.text.empty(), "should have content after clearing range");
+    cleanupTestDb("test_content_words.db");
+    PASS();
+}
+
 static void test_database_default_mode() {
     TEST("Database provider: default mode is common words");
     auto cp = cpptypr::ContentProvider::fromDatabase("test_default.db");
@@ -249,6 +305,11 @@ int main() {
 
     test_provider_reset();
     test_provider_move();
+
+    test_difficulty_filter();
+    test_difficulty_filter_clear();
+    test_word_length_range();
+    test_word_length_range_clear();
 
     fprintf(stderr, "\n=== Results: %d passed, %d failed, %d total ===\n",
            tests_passed, tests_failed, test_count);

@@ -134,6 +134,22 @@ std::optional<SessionData> Repository::bestRawWpm() const {
 
 double Repository::averageWpm() const { CHECK_MOVED(); return ::repositoryGetAverageWpm(m_impl.get()); }
 
+std::vector<SessionData> Repository::getSessionsByMode(std::string_view mode) const {
+    CHECK_MOVED();
+    size_t count;
+    auto* arr = ::repositoryGetSessionsByMode(m_impl.get(), std::string(mode).c_str(), &count);
+    if (!arr) { return {}; }
+    std::vector<SessionData> result;
+    result.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+        result.push_back({ arr[i].id, arr[i].timestamp, arr[i].mode,
+            arr[i].totalChars, arr[i].correctChars, std::chrono::milliseconds(arr[i].durationMs),
+            arr[i].wpm, arr[i].wpmRaw, arr[i].accuracy });
+    }
+    ::free(arr);
+    return result;
+}
+
 void Repository::ensureCache() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_cacheValid) {

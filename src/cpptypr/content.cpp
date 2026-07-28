@@ -58,6 +58,16 @@ ContentProvider& ContentProvider::operator=(ContentProvider&&) noexcept = defaul
 void ContentProvider::setMode(ContentMode mode) { CHECK_MOVED(); ::contentProviderSetMode(m_impl.get(), static_cast<::ContentMode>(mode)); }
 void ContentProvider::setMode(std::string_view mode) { CHECK_MOVED(); setMode(contentModeFromString(mode)); }
 
+void ContentProvider::setDifficultyFilter(std::string_view difficulty) {
+    CHECK_MOVED();
+    ::contentProviderSetDifficultyFilter(m_impl.get(), difficulty.empty() ? nullptr : std::string(difficulty).c_str());
+}
+
+void ContentProvider::setWordLengthRange(size_t minLen, size_t maxLen) {
+    CHECK_MOVED();
+    ::contentProviderSetWordLengthRange(m_impl.get(), minLen, maxLen);
+}
+
 void ContentProvider::setContentLimit(size_t limit) { CHECK_MOVED(); ::contentProviderSetContentLimit(m_impl.get(), limit); }
 
 ContentChunk ContentProvider::getNext() {

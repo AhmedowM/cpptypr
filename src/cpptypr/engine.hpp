@@ -46,9 +46,8 @@ std::ostream& operator<<(std::ostream& os, EngineMode mode);
 
 /** @brief RAII handle that disconnects an event callback on destruction.
  *
- * Returned by Engine::onStarted, Engine::onFinished, etc.
- * Automatically disconnects the callback when the handle goes out of scope,
- * preventing dangling callbacks after the handle is discarded. */
+ *  Returned by Engine::onStarted, Engine::onFinished, etc.
+ *  Automatically disconnects the callback when the handle goes out of scope. */
 class CallbackHandle {
 public:
     /** @brief Construct a null (disconnected) handle. */
@@ -65,7 +64,7 @@ public:
     void disconnect();
 
     /** @brief Check whether this handle refers to an active connection.
-     *  @return true if the handle is connected to a registered callback. */
+     *  @return true if connected to a registered callback. */
     [[nodiscard]] explicit operator bool() const noexcept { return m_cb != nullptr; }
 
     CallbackHandle(::Engine* engine, int event, int slotId, void* cb);
@@ -81,17 +80,17 @@ private:
 
 /** @brief RAII wrapper around the C typing engine.
  *
- * Manages the full lifecycle: creation, start/stop, pause/resume,
- * keystroke input, statistics, event callbacks, and cleanup.
+ *  Manages the full lifecycle: creation, start/stop, pause/resume,
+ *  keystroke input, statistics, event callbacks, and cleanup.
  *
- * The Engine owns the underlying C engine instance. It must be provided
- * with a ContentProvider (and optionally a Logger and Repository for
- * auto-save) before starting.
+ *  The Engine owns the underlying C engine instance. It must be provided
+ *  with a ContentProvider (and optionally a Logger and Repository for
+ *  auto-save) before starting.
  *
- * @note Non-copyable, movable. After a move the source is left empty. */
+ *  @note Non-copyable, movable. After a move the source is left empty. */
 class Engine {
 public:
-    /** @brief Construct an engine in the given mode with a content provider.
+    /** @brief Construct an engine with the given mode and content provider.
      *  @param mode     The typing mode (Strict or Flow).
      *  @param provider Content provider; must outlive the engine.
      *  @param timeout  Session timeout in seconds. 0 means no timeout. */
@@ -141,7 +140,7 @@ public:
     /** @brief Signal a backspace (undo the last keystroke if allowed by mode). */
     void backspacePress();
 
-    /** @brief Manually update the engine's internal timer and check for timeout.
+    /** @brief Manually advance the engine's internal timer and check for timeout.
      *  Useful for driving the engine in game loops without keystrokes. */
     void tick();
 
@@ -187,8 +186,8 @@ public:
 
     // ---- Configuration ----
 
-    /** @brief Change the engine mode.
-     *  @param mode The new engine mode. Only valid when idle. */
+    /** @brief Change the engine mode. Only valid when idle.
+     *  @param mode The new engine mode. */
     void setMode(EngineMode mode);
 
     /** @brief Change the engine mode using a case-insensitive string.

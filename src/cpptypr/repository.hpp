@@ -21,15 +21,15 @@ class Engine;
 
 /** @brief A single saved typing session. */
 struct SessionData {
-    int64_t id;            /**< Unique session identifier. */
-    std::string timestamp; /**< ISO-formatted creation timestamp. */
-    std::string mode;      /**< Engine mode used during the session. */
-    int64_t totalChars;    /**< Total characters typed. */
-    int64_t correctChars;  /**< Correctly typed characters. */
+    int64_t id;                     /**< Unique session identifier. */
+    std::string timestamp;          /**< ISO-formatted creation timestamp. */
+    std::string mode;               /**< Engine mode used during the session. */
+    int64_t totalChars;             /**< Total characters typed. */
+    int64_t correctChars;           /**< Correctly typed characters. */
     std::chrono::milliseconds durationMs{0}; /**< Session duration in milliseconds. */
-    double wpm;            /**< Net words-per-minute. */
-    double wpmRaw;         /**< Raw words-per-minute. */
-    double accuracy;       /**< Accuracy percentage (0.0–100.0). */
+    double wpm;                     /**< Net words-per-minute. */
+    double wpmRaw;                  /**< Raw words-per-minute. */
+    double accuracy;                /**< Accuracy percentage (0.0–100.0). */
 };
 
 /** @brief Write SessionData to an output stream.
@@ -40,11 +40,11 @@ std::ostream& operator<<(std::ostream& os, const SessionData& data);
 
 /** @brief RAII wrapper that persists session data to a SQLite database.
  *
- * Provides CRUD operations for typing sessions and convenience queries
- * for best scores and averages. The underlying ::Repository is owned
- * by this wrapper.
+ *  Provides CRUD operations for typing sessions and convenience queries
+ *  for best scores and averages. The underlying ::Repository is owned
+ *  by this wrapper.
  *
- * @note Non-copyable but movable. */
+ *  @note Non-copyable but movable. */
 class Repository {
 public:
     /** @brief Open (or create) a database at the given file path.
@@ -100,6 +100,11 @@ public:
     /** @brief Get the average net WPM across all sessions.
      *  @return Average WPM, or 0.0 if there are no sessions. */
     double averageWpm() const;
+
+    /** @brief Retrieve sessions filtered by mode, most recent first.
+     *  @param mode Mode string ("strict" or "flow").
+     *  @return A vector of matching sessions. */
+    std::vector<SessionData> getSessionsByMode(std::string_view mode) const;
 
     // ---- Range-based iteration ----
 
