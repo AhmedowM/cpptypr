@@ -10,8 +10,9 @@ namespace cpptypr {
 
 Error::Error(ErrorCode code)
     : std::runtime_error([code] {
-        char buf[128];
+        char buf[256] = {};
         ::engineErrorToString(static_cast<::EngineError>(code), buf, sizeof(buf));
+        buf[sizeof(buf) - 1] = '\0';
         return std::string(buf);
     }()), m_code(code) {}
 

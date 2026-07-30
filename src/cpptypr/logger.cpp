@@ -21,12 +21,11 @@ std::string_view toString(LogLevel level) noexcept {
 }
 
 LogLevel logLevelFromString(std::string_view s) {
-    auto lower = cpptypr::detail::toLower(s);
-    if (lower == "debug")   return LogLevel::Debug;
-    if (lower == "info")    return LogLevel::Info;
-    if (lower == "warning") return LogLevel::Warning;
-    if (lower == "error")   return LogLevel::Error;
-    if (lower == "none")    return LogLevel::None;
+    if (detail::icaseEqual(s, "debug"))   return LogLevel::Debug;
+    if (detail::icaseEqual(s, "info"))    return LogLevel::Info;
+    if (detail::icaseEqual(s, "warning")) return LogLevel::Warning;
+    if (detail::icaseEqual(s, "error"))   return LogLevel::Error;
+    if (detail::icaseEqual(s, "none"))    return LogLevel::None;
     throw Error(ErrorCode::Config);
 }
 
@@ -55,12 +54,14 @@ void Logger::logToStdout(bool enable) { CHECK_MOVED(); ::loggerLogToStdout(m_imp
 
 bool Logger::addFile(std::string_view filepath) {
     CHECK_MOVED();
-    return ::loggerAddFile(m_impl.get(), std::string(filepath).c_str());
+    char buf[260];
+    return ::loggerAddFile(m_impl.get(), detail::nullTerminal(buf, filepath));
 }
 
 void Logger::log(LogLevel level, std::string_view message) {
     CHECK_MOVED();
-    ::loggerLog(m_impl.get(), static_cast<::LogLevel>(level), std::string(message).c_str());
+    char buf[1024];
+    ::loggerLog(m_impl.get(), static_cast<::LogLevel>(level), detail::nullTerminal(buf, message));
 }
 
 void Logger::log(std::string_view level, std::string_view message) {

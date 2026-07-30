@@ -1,5 +1,6 @@
 #include <snapshot.h>
 
+#include <cstring>
 #include <memory>
 
 #include <cpptypr/snapshot.hpp>
@@ -28,7 +29,15 @@ std::string_view toString(StopCause cause) noexcept {
     return "none";
 }
 
-Snapshot::Snapshot(const ::EngineSnapshot& snap) : m_snap(std::make_unique<::EngineSnapshot>(snap)) {}
+Snapshot::Snapshot(const ::EngineSnapshot& snap)
+    : m_textBlob(snap.text && snap.length ? std::string(snap.text, snap.length) : std::string{}),
+      m_snap(std::make_unique<::EngineSnapshot>(snap))
+{
+    if (!m_textBlob.empty()) {
+        std::strncpy(m_snap->text, m_textBlob.c_str(), sizeof(m_snap->text) - 1);
+        m_snap->text[sizeof(m_snap->text) - 1] = '\0';
+    }
+}
 Snapshot::~Snapshot() = default;
 Snapshot::Snapshot(Snapshot&&) noexcept = default;
 Snapshot& Snapshot::operator=(Snapshot&&) noexcept = default;

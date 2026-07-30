@@ -23,7 +23,10 @@ std::ostream& operator<<(std::ostream& os, const SessionData& data) {
               << "%, duration=" << data.durationMs.count() << "ms}";
 }
 
-Repository::Repository(std::string_view dbPath) : m_impl(::repositoryCreate(std::string(dbPath).c_str())) {}
+Repository::Repository(std::string_view dbPath) : m_impl([&] {
+        char buf[260];
+        return ::repositoryCreate(detail::nullTerminal(buf, dbPath));
+    }()) {}
 
 Repository::~Repository() = default;
 
@@ -137,7 +140,8 @@ double Repository::averageWpm() const { CHECK_MOVED(); return ::repositoryGetAve
 std::vector<SessionData> Repository::getSessionsByMode(std::string_view mode) const {
     CHECK_MOVED();
     size_t count;
-    auto* arr = ::repositoryGetSessionsByMode(m_impl.get(), std::string(mode).c_str(), &count);
+    char buf[16];
+    auto* arr = ::repositoryGetSessionsByMode(m_impl.get(), detail::nullTerminal(buf, mode), &count);
     if (!arr) { return {}; }
     std::vector<SessionData> result;
     result.reserve(count);
@@ -153,8 +157,8 @@ std::vector<SessionData> Repository::getSessionsByMode(std::string_view mode) co
 void Repository::ensureCache() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (!m_cacheValid) {
-        const_cast<Repository*>(this)->m_cache = const_cast<Repository*>(this)->getAll();
-        const_cast<Repository*>(this)->m_cacheValid = true;
+        m_cache = getAll();
+        m_cacheValid = true;
     }
 }
 

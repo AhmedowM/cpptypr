@@ -44,10 +44,17 @@ enum class EngineMode {
  *  @return The output stream. */
 std::ostream& operator<<(std::ostream& os, EngineMode mode);
 
-/** @brief RAII handle that disconnects an event callback on destruction.
+/** @brief RAII handle that disconnects event callbacks on destruction.
  *
- *  Returned by Engine::onStarted, Engine::onFinished, etc.
- *  Automatically disconnects the callback when the handle goes out of scope. */
+ *  Returned by Engine::onStarted, Engine::onStopped, etc.
+ *  Automatically disconnects the callback when the handle goes out of scope.
+ *
+ *  **Important:** Disconnect or destroy all CallbackHandle objects **before**
+ *  moving or destroying the associated Engine. After Engine move or destruction,
+ *  handles are silently detached (they skip disconnection but still clean up
+ *  the heap-allocated callback).
+ *
+ *  This handle is move-only; copy construction is forbidden. */
 class CallbackHandle {
 public:
     /** @brief Construct a null (disconnected) handle. */
@@ -289,8 +296,7 @@ public:
     [[nodiscard]] CallbackHandle onError(std::function<void()> cb);
 
 private:
-    std::unique_ptr<class Logger> m_defaultLogger;
-    class Logger* m_logger;
+    class Logger* m_logger = nullptr;
     std::unique_ptr<::Engine, EngineDeleter> m_impl;
 };
 

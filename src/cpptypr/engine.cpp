@@ -37,9 +37,8 @@ std::string_view toString(EngineMode mode) noexcept {
 }
 
 EngineMode engineModeFromString(std::string_view s) {
-    auto lower = cpptypr::detail::toLower(s);
-    if (lower == "strict") return EngineMode::Strict;
-    if (lower == "flow")   return EngineMode::Flow;
+    if (detail::icaseEqual(s, "strict")) return EngineMode::Strict;
+    if (detail::icaseEqual(s, "flow"))   return EngineMode::Flow;
     throw Error(ErrorCode::InvalidMode);
 }
 
@@ -51,24 +50,16 @@ Engine::Engine(std::string_view mode, ContentProvider& provider, uint16_t timeou
     : Engine(engineModeFromString(mode), provider, timeout) {}
 
 Engine::Engine(EngineMode mode, ContentProvider& provider, uint16_t timeout)
-    : m_defaultLogger(std::make_unique<Logger>(LogLevel::Warning, false)),
-      m_logger(m_defaultLogger.get()),
-      m_impl([&] {
+    : m_impl([&] {
           ::EngineConfig config{};
           config.mode = static_cast<::EngineMode>(mode);
           config.timeout = timeout;
           config.contentProvider = provider.m_impl.get();
           return ::engineCreate(&config);
       }())
-{
-    ::engineSetLogger(m_impl.get(), m_logger->m_impl.get());
-}
+{}
 
-Engine::~Engine() {
-    if (m_impl) {
-        ::engineSetLogger(m_impl.get(), nullptr);
-    }
-}
+Engine::~Engine() = default;
 
 Engine::Engine(Engine&&) noexcept = default;
 
@@ -136,8 +127,8 @@ void Engine::setLogger(Logger& logger) {
 
 void Engine::resetLogger() {
     CHECK_MOVED();
-    m_logger = m_defaultLogger.get();
-    ::engineSetLogger(m_impl.get(), m_logger->m_impl.get());
+    m_logger = nullptr;
+    ::engineSetLogger(m_impl.get(), nullptr);
 }
 
 #define DEFINE_ON(name, c_event) \

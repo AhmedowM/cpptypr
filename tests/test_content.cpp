@@ -48,6 +48,14 @@ static void test_string_provider_empty() {
     PASS();
 }
 
+static void test_getnext_empty_provider_yields_empty_chunk() {
+    TEST("ContentProvider: getNext() from empty string provider yields empty chunks");
+    auto provider = cpptypr::ContentProvider::fromString("");
+    auto c = provider.getNext();
+    ASSERT(c.text.empty(), "empty provider should yield empty chunk");
+    PASS();
+}
+
 static void test_string_provider_reset() {
     TEST("String provider: reset");
     auto cp = cpptypr::ContentProvider::fromString("Test");
@@ -287,6 +295,7 @@ int main() {
 
     test_string_provider();
     test_string_provider_empty();
+    test_getnext_empty_provider_yields_empty_chunk();
     test_string_provider_reset();
 
     test_file_provider();

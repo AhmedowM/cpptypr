@@ -20,10 +20,9 @@ std::string_view toString(ContentMode mode) noexcept {
 }
 
 ContentMode contentModeFromString(std::string_view s) {
-    auto lower = cpptypr::detail::toLower(s);
-    if (lower == "sentences")    return ContentMode::Sentences;
-    if (lower == "commonwords")  return ContentMode::CommonWords;
-    if (lower == "randomwords")  return ContentMode::RandomWords;
+    if (detail::icaseEqual(s, "sentences"))    return ContentMode::Sentences;
+    if (detail::icaseEqual(s, "commonwords"))  return ContentMode::CommonWords;
+    if (detail::icaseEqual(s, "randomwords"))  return ContentMode::RandomWords;
     throw Error(ErrorCode::InvalidMode);
 }
 
@@ -32,19 +31,23 @@ std::ostream& operator<<(std::ostream& os, ContentMode mode) {
 }
 
 ContentProvider ContentProvider::fromString(std::string_view text) {
-    return ContentProvider(::contentProviderFromString(std::string(text).c_str()));
+    char buf[4096];
+    return ContentProvider(::contentProviderFromString(detail::nullTerminal(buf, text)));
 }
 
 ContentProvider ContentProvider::fromFile(std::string_view path) {
-    return ContentProvider(::contentProviderFromFile(std::string(path).c_str()));
+    char buf[260];
+    return ContentProvider(::contentProviderFromFile(detail::nullTerminal(buf, path)));
 }
 
 ContentProvider ContentProvider::fromDatabase(std::string_view path) {
-    return ContentProvider(::contentProviderFromDatabase(std::string(path).c_str()));
+    char buf[260];
+    return ContentProvider(::contentProviderFromDatabase(detail::nullTerminal(buf, path)));
 }
 
 ContentProvider ContentProvider::fromWeb(std::string_view url) {
-    return ContentProvider(::contentProviderFromWeb(std::string(url).c_str()));
+    char buf[260];
+    return ContentProvider(::contentProviderFromWeb(detail::nullTerminal(buf, url)));
 }
 
 ContentProvider::ContentProvider(::ContentProvider* p) : m_impl(p) {}
@@ -60,7 +63,12 @@ void ContentProvider::setMode(std::string_view mode) { CHECK_MOVED(); setMode(co
 
 void ContentProvider::setDifficultyFilter(std::string_view difficulty) {
     CHECK_MOVED();
-    ::contentProviderSetDifficultyFilter(m_impl.get(), difficulty.empty() ? nullptr : std::string(difficulty).c_str());
+    if (difficulty.empty()) {
+        ::contentProviderSetDifficultyFilter(m_impl.get(), nullptr);
+        return;
+    }
+    char buf[32];
+    ::contentProviderSetDifficultyFilter(m_impl.get(), detail::nullTerminal(buf, difficulty));
 }
 
 void ContentProvider::setWordLengthRange(size_t minLen, size_t maxLen) {
@@ -73,7 +81,7 @@ void ContentProvider::setContentLimit(size_t limit) { CHECK_MOVED(); ::contentPr
 ContentChunk ContentProvider::getNext() {
     CHECK_MOVED();
     auto c = ::contentProviderGetNext(m_impl.get());
-    if (c.length == 0) return ContentChunk{};
+    if (!c.text || c.length == 0) return ContentChunk{};
     return ContentChunk{ std::string(c.text, c.length) };
 }
 

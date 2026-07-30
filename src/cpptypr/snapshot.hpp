@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <string_view>
 
 #include <cpptypr/stats.hpp>
@@ -90,6 +91,7 @@ public:
 private:
     friend Engine;
     explicit Snapshot(const ::EngineSnapshot& snap);
+    std::string m_textBlob;
     std::unique_ptr<::EngineSnapshot> m_snap;
 };
 

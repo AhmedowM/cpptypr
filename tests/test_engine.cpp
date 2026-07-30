@@ -246,6 +246,18 @@ static void test_flow_backspace_incorrect() {
     PASS();
 }
 
+static void test_flow_backspace_at_start() {
+    TEST("Flow mode: backspace at start does not crash");
+    auto content = cpptypr::ContentProvider::fromString("a");
+    cpptypr::Engine e(cpptypr::EngineMode::Flow, content, 0);
+    e.start();
+    e.backspacePress();
+    ASSERT(!e.isError(), "backspace at position 0 should not cause error");
+    e.keyPress('a');
+    ASSERT(e.isCompleted(), "completing 'a' should finish session");
+    PASS();
+}
+
 // ===== Session Completion =====
 
 static void test_session_complete_strict() {
@@ -459,6 +471,21 @@ static void test_ctypr_error() {
     PASS();
 }
 
+static void test_error_what_non_empty() {
+    TEST("Error: what() is non-empty for all ErrorCodes");
+    const cpptypr::ErrorCode codes[] = {
+        cpptypr::ErrorCode::None, cpptypr::ErrorCode::InvalidMode, cpptypr::ErrorCode::InvalidTimeout,
+        cpptypr::ErrorCode::AlreadyRunning, cpptypr::ErrorCode::NotRunning, cpptypr::ErrorCode::Config,
+        cpptypr::ErrorCode::Content, cpptypr::ErrorCode::State, cpptypr::ErrorCode::Provider,
+        cpptypr::ErrorCode::File, cpptypr::ErrorCode::Unknown
+    };
+    for (auto c : codes) {
+        cpptypr::Error err(c);
+        ASSERT(strlen(err.what()) > 0, "Error::what() should not be empty");
+    }
+    PASS();
+}
+
 static void test_pause_error_path() {
     TEST("Error handling: pause when not running");
     auto e = makeEngine(cpptypr::EngineMode::Strict);
@@ -538,6 +565,19 @@ static void test_tick() {
     PASS();
 }
 
+static void test_tick_zero_timeout() {
+    TEST("Tick: tick with zero timeout does not crash");
+    auto content = cpptypr::ContentProvider::fromString("hello");
+    cpptypr::Engine engine(cpptypr::EngineMode::Strict, content, 0);
+    engine.start();
+    engine.tick();
+    ASSERT(!engine.isError(), "tick with zero timeout should not cause error");
+    engine.keyPress('h');
+    engine.tick();
+    ASSERT(!engine.isError(), "tick after key with zero timeout should not cause error");
+    PASS();
+}
+
 // ===== Snapshot =====
 
 static void test_snapshot_before_start() {
@@ -596,11 +636,24 @@ static void test_snapshot_flow_backspace() {
     e.start();
     e.keyPress('X');
     auto snap1 = e.getSnapshot();
-    ASSERT(snap1.isIncorrect(0), "flag should be set after wrong key");
+    ASSERT(snap1.isIncorrect(0), "flag should be set after X");
     e.backspacePress();
     auto snap2 = e.getSnapshot();
     ASSERT(!snap2.isIncorrect(0), "flag should be cleared after backspace");
     ASSERT(snap2.cursorIndex() == 0, "cursor should return to start");
+    PASS();
+}
+
+static void test_snapshot_keystroke_text_survives() {
+    TEST("Snapshot: text from deep copy survives engine keystroke");
+    auto content = cpptypr::ContentProvider::fromString("abcdefghij");
+    cpptypr::Engine engine(cpptypr::EngineMode::Flow, content, 0);
+    engine.start();
+    engine.keyPress('a'); engine.keyPress('b');
+    auto snap = engine.getSnapshot();
+    std::string saved(snap.text());
+    engine.keyPress('c');
+    ASSERT(std::string(snap.text()) == saved, "snapshot text should not change after keystroke");
     PASS();
 }
 
@@ -694,6 +747,7 @@ int main() {
         test_flow_incorrect_key_advances();
         test_flow_backspace_correct();
         test_flow_backspace_incorrect();
+        test_flow_backspace_at_start();
         test_session_complete_strict();
         test_session_complete_flow();
         test_callbacks();
@@ -706,18 +760,21 @@ int main() {
         test_error_already_running();
         test_error_not_running();
         test_ctypr_error();
+        test_error_what_non_empty();
         test_pause_error_path();
         test_resume_error_path();
         test_timeout_zero_disabled();
         test_timeout_triggers();
         test_timeout_pause_does_not_accumulate();
         test_tick();
+        test_tick_zero_timeout();
 
         test_snapshot_before_start();
         test_snapshot_after_start();
         test_snapshot_incorrect_flags();
         test_snapshot_after_completion();
         test_snapshot_flow_backspace();
+        test_snapshot_keystroke_text_survives();
         test_engine_state_to_string();
         test_stop_cause_to_string();
 
